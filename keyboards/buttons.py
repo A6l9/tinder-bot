@@ -44,3 +44,52 @@ location_buttons = (
         callback_data='location_write'
     )
 )
+
+skip_button = (
+    InlineKeyboardButton(
+        text='Пропустить',
+        callback_data='skip'
+    ),
+)
+
+edit_button = (
+    InlineKeyboardButton(
+        text='Изменить анкету',
+        callback_data='show_edit_points'
+    ),
+)
+
+edit_points_buttons = (
+    InlineKeyboardButton(
+        text='Изменить имя',
+        callback_data='edit_name'
+    ),
+    InlineKeyboardButton(
+        text='Изменить город',
+        callback_data='edit_city'
+    ),
+    InlineKeyboardButton(
+        text='Изменить описание',
+        callback_data='edit_description'
+    ),
+    InlineKeyboardButton(
+        text='Изменить фото/видео',
+        callback_data='edit_media'
+    ),
+    InlineKeyboardButton(
+        text='Заполнить анкету заново',
+        callback_data='change_questionnaire'
+    )
+)
+
+location_edit_buttons = (
+    InlineKeyboardButton(
+        text='📍Поделиться геолокацией',
+        request_location=True,
+        callback_data='editlocation_share'
+    ),
+    InlineKeyboardButton(
+        text='🖨Ввести вручную адрес',
+        callback_data='editlocation_write'
+    )
+)

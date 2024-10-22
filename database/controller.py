@@ -1,12 +1,12 @@
 from typing import Iterable, List
 
 from loguru import logger
-from sqlalchemy import Select, update
+from sqlalchemy import Select, update, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.ddl import DropTable
 from typing_extensions import Any
-from database.models import Users
+from database.models import Users, Cities
 from database.database import Base
 
 class BaseInterface:
@@ -218,3 +218,11 @@ class BaseInterface:
                 logger.info('Add new row')
             except Exception as exc:
                 logger.exception(exc)
+
+    async def search_cities(self, fragment: str):
+        async with self.async_ses() as session:
+            query = select(Cities).where(Cities.city.ilike(f'%{fragment}%'))
+            result = await session.execute(query)
+            cities = result.scalars().all()
+            res = [*cities]
+            return res
