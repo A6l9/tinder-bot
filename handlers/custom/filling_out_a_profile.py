@@ -1,5 +1,4 @@
 import asyncio
-from os import replace
 import json
 
 from aiogram import Router, F
@@ -21,7 +20,6 @@ from storage.states import States
 from loader import bot
 
 profile_router = Router()
-
 
 @profile_router.callback_query(F.data == 'start_completion')
 async def start_completion(call: CallbackQuery, state: FSMContext):
@@ -186,24 +184,32 @@ async def about_yourself_get_answer(message: Message, state: FSMContext):
 
 @profile_router.message(States.send_video_or_photo, F.content_type.in_({'photo', 'video'}))
 async def take_photo_or_video(message: Message, state: FSMContext):
-    photo_ids = [photo.file_id for photo in message.photo]
-
+    storage = await state.get_data()
     if message.photo:
-        await state.clear()
-        user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-        list_photos = json.loads(user_data.photos).get('photos')
-        if len(list_photos) == 5:
-            replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
-            await message.answer(replica.replica)
+        if message.media_group_id:
+            if storage.get(message.media_group_id):
+                ...
+            else:
+                await state.update_data({message.media_group_id: True})
+                replica = await db.get_row(BotReplicas, unique_name='only_one_photo')
+                await message.answer(replica.replica)
         else:
-            file_id = message.photo[-1].file_id
-            list_photos.append(file_id)
-            await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                     photos=json.dumps({'photos': list_photos}),
-                                     video='')
-            replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
-            await message.answer(replica.replica)
-            await state.clear()
+            user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+            list_photos = json.loads(user_data.photos).get('photos')
+            if len(list_photos) == 5:
+                replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
+                await message.answer(replica.replica.replace('|n', '\n'))
+                await state.clear()
+            else:
+                file_id = message.photo[-1].file_id
+                list_photos.append(file_id)
+                await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
+                                         photos=json.dumps({'photos': list_photos}),
+                                         video='')
+                replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
+                await message.answer(replica.replica)
+                await db.update_user_row(Users, tg_user_id=str(message.from_user.id), done_questionnaire=True)
+                await state.clear()
     elif message.video:
         if message.video.duration <=15:
             file_id = message.video.file_id
@@ -234,8 +240,8 @@ async def show_edit_points(call: CallbackQuery):
 async def change_distributor(call: CallbackQuery, state: FSMContext):
     point = call.data.split('_')[1]
     if point == 'name':
-        replica = await db.get_row(BotReplicas, unique_name='name_question')
-        await call.message.answer(replica.replica, reply_markup=create_name_question_edit(call.from_user.username))
+        replica = await db.get_row(BotReplicas, unique_name='new_name')
+        await call.message.answer(replica.replica)
         await state.set_state(States.name_question_edit)
     elif point == 'city':
         replica = await db.get_row(BotReplicas, unique_name='city_question')

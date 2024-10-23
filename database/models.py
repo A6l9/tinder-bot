@@ -30,6 +30,7 @@ class Users(Base):
     city_type: Mapped[str] = mapped_column(String, nullable=True)
     city: Mapped[str] = mapped_column(String, nullable=True)
     is_admin: Mapped[Boolean] = mapped_column(Boolean, default=False)
+    done_questionnaire: Mapped[Boolean] = mapped_column(Boolean, default=False)
     date_create: Mapped[DateTime] = mapped_column(DateTime,
                                       default=datetime.datetime.now(datetime.UTC).replace(microsecond=0, tzinfo=None))
     def __str__(self):
@@ -43,6 +44,12 @@ class Users(Base):
 class BotReplicas(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     replica: Mapped[Text] = mapped_column(Text)
+    unique_name: Mapped[str] = mapped_column(String)
+
+
+class BotButtons(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    button: Mapped[Text] = mapped_column(Text)
     unique_name: Mapped[str] = mapped_column(String)
 
 

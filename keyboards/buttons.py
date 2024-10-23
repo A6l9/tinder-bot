@@ -1,8 +1,15 @@
 from aiogram.types import InlineKeyboardButton
+from sqlalchemy.util import await_only
 
+from loader import db
+from database.models import BotButtons
+
+
+async def get_button(name_button):
+    await db.get_row(BotButtons, unique_name=)
 
 start_button = (InlineKeyboardButton(
-    text='👌Давай начнем',
+    text=,
     callback_data='start_completion'
 ))
 
@@ -91,5 +98,11 @@ location_edit_buttons = (
     InlineKeyboardButton(
         text='🖨Ввести вручную адрес',
         callback_data='editlocation_write'
+    )
+)
+
+cancel_button = (
+    InlineKeyboardButton(
+        text='❌Отмена'
     )
 )

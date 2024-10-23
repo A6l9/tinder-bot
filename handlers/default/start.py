@@ -1,11 +1,12 @@
+import json
 
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, InputMediaPhoto
 from aiogram.filters import CommandStart
-from loader import db
+from loader import db, bot
 from loguru import logger
 from database.models import Users, BotReplicas
-from keyboards.inline.inline_kbs import create_start_button
+from keyboards.inline.inline_kbs import create_start_button, create_change_button
 
 
 start_router = Router()
@@ -25,5 +26,45 @@ async def start(message: Message):
             logger.error(exc)
             await message.answer('Произошла ошибка, попробуйте еще раз!')
     else:
-        replica = await db.get_row(BotReplicas, unique_name='start_message')
-        await message.answer(replica.replica, reply_markup=create_start_button())
+        if user.done_questionnaire:
+            content = None
+            replica = await db.get_row(BotReplicas, unique_name='here_your_profile')
+            if json.loads(user.photos).get('photos'):
+                content = json.loads(user.photos).get('photos')
+                if user.about_yourself:
+                    description = user.about_yourself
+                else:
+                    description = 'Нет описания'
+                if len(content) == 1:
+                    await bot.send_photo(chat_id=message.from_user.id,
+                                         photo=content[0], caption=replica.replica.replace('|n', '\n').format(
+                            name=user.username,
+                            age=user.age,
+                            city=user.city,
+                            desc=description),
+                                         reply_markup=create_change_button())
+                else:
+                    media_group = [InputMediaPhoto(media=media_id) for media_id in content]
+                    await bot.send_media_group(chat_id=message.from_user.id,
+                                               media=media_group, caption=replica.replica.replace('|n', '\n').format(
+                            name=user.username,
+                            age=user.age,
+                            city=user.city,
+                            desc=description),
+                                               reply_markup=create_change_button())
+            elif user.video:
+                content = user.video
+                if user.about_yourself:
+                    description = user.about_yourself
+                else:
+                    description = 'Нет описания'
+                await bot.send_video(chat_id=message.from_user.id,
+                                     video=content, caption=replica.replica.replace('|n', '\n').format(
+                        name=user.username,
+                        age=user.age,
+                        city=user.city,
+                        desc=description),
+                                     reply_markup=create_change_button())
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='start_message')
+            await message.answer(replica.replica, reply_markup=create_start_button())

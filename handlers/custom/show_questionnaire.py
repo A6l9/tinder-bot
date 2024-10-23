@@ -16,6 +16,7 @@ async def show_questionnaire(message: Message):
     logger.info('Command show_profile')
     user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     content = None
+    replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if json.loads(user_data.photos).get('photos'):
         content = json.loads(user_data.photos).get('photos')
         if user_data.about_yourself:
@@ -24,8 +25,7 @@ async def show_questionnaire(message: Message):
             description = 'Нет описания'
         if len(content) == 1:
             await bot.send_photo(chat_id=message.from_user.id,
-                            photo=content[0], caption='Имя: {name}\nВозраст: {age}\nГород: {city}\n'
-                                                                                 'Описание: {desc}'.format(
+                            photo=content[0], caption=replica.replica.replace('|n', '\n').format(
                                                                                  name=user_data.username,
                                                                                  age=user_data.age,
                                                                                  city=user_data.city,
@@ -34,8 +34,7 @@ async def show_questionnaire(message: Message):
         else:
             media_group = [InputMediaPhoto(media=media_id) for media_id in content]
             await bot.send_media_group(chat_id=message.from_user.id,
-                                 media=media_group, caption='Имя: {name}\nВозраст: {age}\nГород: {city}\n'
-                                                                                    'Описание: {desc}'.format(
+                                 media=media_group, caption=replica.replica.replace('|n', '\n').format(
                                                                                     name=user_data.username,
                                                                                     age=user_data.age,
                                                                                     city=user_data.city,
@@ -48,8 +47,7 @@ async def show_questionnaire(message: Message):
         else:
             description = 'Нет описания'
         await bot.send_video(chat_id=message.from_user.id,
-                             video=content, caption='Имя: {name}\nВозраст: {age}\nГород: {city}\n'
-                                                                                 'Описание: {desc}'.format(
+                             video=content, caption=replica.replica.replace('|n', '\n').format(
                                                                                 name=user_data.username,
                                                                                 age=user_data.age,
                                                                                 city=user_data.city,
