@@ -12,8 +12,6 @@ from database.models import BotReplicas, Users, Cities
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_buttons, create_location_buttons,
                                          create_name_question, create_buttons_cities, create_skip_button,
-                                         create_points_buttons, create_name_question_edit, create_location_edit_buttons,
-                                         create_buttons_cities_edit,
                                          )
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
@@ -109,7 +107,7 @@ async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
         except Exception as exc:
             logger.error(f'Error updating user location: {exc}')
 
-@profile_router.message(F.location)
+@profile_router.message(States.location_share, F.location)
 async def location_share_take_answer(message: Message, state: FSMContext):
     cities = await db.get_row(Cities, to_many=True)
     latitude = message.location.latitude
@@ -223,128 +221,3 @@ async def take_photo_or_video(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
-
-
-@profile_router.callback_query(F.data == 'change_questionnaire')
-async def change_questionnaire_again(call: CallbackQuery, state: FSMContext):
-    await state.set_state(States.age_question)
-    replica = await db.get_row(BotReplicas, unique_name='age_question')
-    await call.message.answer(replica.replica)
-
-@profile_router.callback_query(F.data == 'show_edit_points')
-async def show_edit_points(call: CallbackQuery):
-    replica = await db.get_row(BotReplicas, unique_name='what_to_edit')
-    await call.message.answer(replica.replica, reply_markup=create_points_buttons())
-
-@profile_router.callback_query(F.data.startswith('edit_'))
-async def change_distributor(call: CallbackQuery, state: FSMContext):
-    point = call.data.split('_')[1]
-    if point == 'name':
-        replica = await db.get_row(BotReplicas, unique_name='new_name')
-        await call.message.answer(replica.replica)
-        await state.set_state(States.name_question_edit)
-    elif point == 'city':
-        replica = await db.get_row(BotReplicas, unique_name='city_question')
-        await call.message.answer(replica.replica, reply_markup=create_location_edit_buttons())
-
-
-
-@profile_router.callback_query(F.data.startswith('editname_'))
-async def name_question_edit_take_answer_from_button(call: CallbackQuery, state: FSMContext):
-    try:
-        await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
-        replica = await db.get_row(BotReplicas, unique_name='what_to_edit')
-        await call.message.answer(replica.replica, reply_markup=create_points_buttons())
-        await state.clear()
-    except Exception as exc:
-        logger.error(f'Error updating username: {exc}')
-
-@profile_router.message(States.name_question_edit)
-async def name_question_edit_take_answer_from_message(message: Message, state: FSMContext):
-    get_username = await db.get_row(Users, username=str(message.text))
-    if not get_username:
-        try:
-            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
-            replica = await db.get_row(BotReplicas, unique_name='what_to_edit')
-            await message.answer(replica.replica, reply_markup=create_points_buttons())
-            await state.clear()
-        except Exception as exc:
-            logger.error(f'Error updating username: {exc}')
-    elif get_username and get_username.tg_user_id == str(message.from_user.id):
-        replica = await db.get_row(BotReplicas, unique_name='write_name_another')
-        await message.answer(replica.replica)
-    else:
-        replica = await db.get_row(BotReplicas, unique_name='name_is_busy')
-        await message.answer(replica.replica)
-
-@profile_router.callback_query(F.data.startswith('editlocation_'))
-async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
-    type_record_location = call.data.split('_')[1]
-    if type_record_location == 'share':
-        try:
-            replica = await db.get_row(BotReplicas, unique_name='share_location')
-            await call.message.answer(replica.replica, reply_markup=create_share_location_button())
-            await state.set_state(States.location_edit_share)
-        except Exception as exc:
-            logger.error(f'Error take user location: {exc}')
-    elif type_record_location == 'write':
-        try:
-            replica = await db.get_row(BotReplicas, unique_name='write_location')
-            await call.message.answer(replica.replica)
-            await state.set_state(States.location_edit_write)
-        except Exception as exc:
-            logger.error(f'Error take user location: {exc}')
-
-
-@profile_router.message(States.location_edit_write)
-async def location_write_search_city(message: Message, state: FSMContext):
-    cities_matches = await db.search_cities(str(message.text))
-    if cities_matches:
-        replica = await db.get_row(BotReplicas, unique_name='city_choose')
-        await message.answer(replica.replica, reply_markup=create_buttons_cities_edit(cities_matches))
-        await state.clear()
-    else:
-        replica = await db.get_row(BotReplicas, unique_name='city_not_found')
-        await message.answer(replica.replica)
-
-
-@profile_router.callback_query(F.data.startswith('editcity_'))
-async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
-    city_code = call.data.split('_')[1]
-    city = await db.get_row(Cities, postal_code=int(city_code))
-    if city:
-        try:
-            await db.update_user_row(model=Users, tg_user_id=call.from_user.id, address=city.address,
-                                 postal_code=city.postal_code, country=city.country,
-                                 federal_district=city.federal_district, region_type=city.region_type,
-                                 region=city.region, area_type=city.area_type, area=city.area,
-                                 city_type=city.city_type, city=city.city)
-            replica = await db.get_row(BotReplicas, unique_name='what_to_edit')
-            await call.message.answer(replica.replica, reply_markup=create_points_buttons())
-            await state.clear()
-        except Exception as exc:
-            logger.error(f'Error updating user location: {exc}')
-
-@profile_router.message(States.location_edit_share, F.location)
-async def location_share_take_answer(message: Message, state: FSMContext):
-    cities = await db.get_row(Cities, to_many=True)
-    latitude = message.location.latitude
-    longitude = message.location.longitude
-    for city in cities:
-        distance = haversine(float(city.geo_lat), float(city.geo_lon), float(latitude), float(longitude))
-        if distance < 20:
-            try:
-                await bot.send_message(message.from_user.id, 'Обработка...', reply_markup=ReplyKeyboardRemove())
-                await asyncio.sleep(1)
-                await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id + 1)
-                await db.update_user_row(model=Users, tg_user_id=message.from_user.id, address=city.address,
-                                         postal_code=city.postal_code, country=city.country,
-                                         federal_district=city.federal_district, region_type=city.region_type,
-                                         region=city.region, area_type=city.area_type, area=city.area,
-                                         city_type=city.city_type, city=city.city)
-                replica = await db.get_row(BotReplicas, unique_name='what_to_edit')
-                await message.answer(replica.replica, reply_markup=create_points_buttons())
-                await state.clear()
-            except Exception as exc:
-                logger.error(f'Error updating user location: {exc}')
-            break

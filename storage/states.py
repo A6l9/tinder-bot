@@ -13,3 +13,7 @@ class States(StatesGroup):
     name_question_edit = State()
     location_edit_share = State()
     location_edit_write = State()
+    description_question_edit = State()
+    send_new_photo_or_video = State()
+    delete_media = State()
+    send_media_before_delete = State()

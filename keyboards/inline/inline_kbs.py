@@ -1,9 +1,13 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from keyboards.buttons import start_button, sex_buttons, \
-                              preference_buttons, location_buttons, skip_button, edit_button, edit_points_buttons, \
-                              location_edit_buttons
-
+    preference_buttons, location_buttons, skip_button, edit_button, edit_points_buttons, \
+    location_edit_buttons, pagination_buttons, pagination_buttons_start, \
+    pagination_buttons_middle, pagination_buttons_end, cancel_button, delete_or_no_button
+from loader import db
+from database.models import Users
+import json
+from loader import user_manager
 
 
 def create_start_button():
@@ -68,24 +72,26 @@ def create_change_button():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def create_points_buttons():
+async def create_points_buttons(user_id):
+    temp_storage = user_manager.get_user(user_id)
+    user = await db.get_row(Users, tg_user_id=str(user_id))
+    temp_storage.photo_storage[user_id] = json.loads(user.photos).get('photos')
     builder = InlineKeyboardBuilder()
-    builder.row(*edit_points_buttons)
-    builder.adjust(1)
+    if len(temp_storage.photo_storage[user_id]) == 1:
+        builder.row(*pagination_buttons)
+    elif temp_storage.num_elem == 0:
+        builder.row(*pagination_buttons_start)
+    elif temp_storage.num_elem == len(temp_storage.photo_storage[user_id]) - 1:
+        builder.row(*pagination_buttons_end)
+    elif 0 < temp_storage.num_elem < len(temp_storage.photo_storage[user_id]) - 1:
+        builder.row(*pagination_buttons_middle)
+    for i_elem in edit_points_buttons:
+        builder.row(i_elem)
     return builder.as_markup()
-
-def create_name_question_edit(username):
-    inline_kb_list = [
-        [InlineKeyboardButton(
-        text='{name}'.format(name=username),
-        callback_data='editname_button'
-    )]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def create_location_edit_buttons():
     builder = InlineKeyboardBuilder()
-    builder.row(*location_edit_buttons)
+    builder.row(*location_edit_buttons, *cancel_button)
 
     return builder.as_markup()
 
@@ -100,3 +106,20 @@ def create_buttons_cities_edit(list_cities):
         )
         builder.adjust(1)
     return builder.as_markup()
+
+def create_cancel_button():
+    inline_kb_list = [
+        [
+            *cancel_button
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def create_delete_or_no_buttons():
+    inline_kb_list = [
+        [
+            *delete_or_no_button,
+            *cancel_button
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

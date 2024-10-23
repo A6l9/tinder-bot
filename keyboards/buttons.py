@@ -1,15 +1,7 @@
 from aiogram.types import InlineKeyboardButton
-from sqlalchemy.util import await_only
-
-from loader import db
-from database.models import BotButtons
-
-
-async def get_button(name_button):
-    await db.get_row(BotButtons, unique_name=)
 
 start_button = (InlineKeyboardButton(
-    text=,
+    text='👌Давай начнем',
     callback_data='start_completion'
 ))
 
@@ -66,6 +58,50 @@ edit_button = (
     ),
 )
 
+pagination_buttons_start = (
+    InlineKeyboardButton(
+        text='Удалить',
+        callback_data='delete'
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='right'
+    )
+)
+
+pagination_buttons_middle = (
+    InlineKeyboardButton(
+        text='◀️',
+        callback_data='left'
+    ),
+    InlineKeyboardButton(
+        text='Удалить',
+        callback_data='delete'
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='right'
+    )
+)
+
+pagination_buttons_end = (
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='left'
+    ),
+    InlineKeyboardButton(
+        text='Удалить',
+        callback_data='delete'
+    )
+)
+
+pagination_buttons = (
+    InlineKeyboardButton(
+        text='Удалить',
+        callback_data='delete'
+    ),
+)
+
 edit_points_buttons = (
     InlineKeyboardButton(
         text='Изменить имя',
@@ -80,8 +116,8 @@ edit_points_buttons = (
         callback_data='edit_description'
     ),
     InlineKeyboardButton(
-        text='Изменить фото/видео',
-        callback_data='edit_media'
+        text='Добавить медиа',
+        callback_data='add_media'
     ),
     InlineKeyboardButton(
         text='Заполнить анкету заново',
@@ -103,6 +139,14 @@ location_edit_buttons = (
 
 cancel_button = (
     InlineKeyboardButton(
-        text='❌Отмена'
-    )
+        text='❌Отмена',
+        callback_data='cancel'
+    ),
+)
+
+delete_or_no_button = (
+    InlineKeyboardButton(
+        text='Да',
+        callback_data='yes'
+    ),
 )
