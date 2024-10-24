@@ -54,5 +54,6 @@ async def show_questionnaire(message: Message):
                                                                     reply_markup=await create_points_buttons(
                                                                         message.from_user.id))
     else:
+        temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await message.answer(replica.replica, reply_markup=create_start_button())
