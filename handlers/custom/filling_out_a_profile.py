@@ -173,7 +173,7 @@ async def about_yourself_get_answer(message: Message, state: FSMContext):
         replica = await db.get_row(BotReplicas, unique_name='null_description')
         await message.answer(replica.replica)
 
-@profile_router.message(States.send_video_or_photo, F.content_type.in_({'photo', 'video'}))
+@profile_router.message(States.send_video_or_photo, F.content_type.in_({'photo', 'video', 'video_note'}))
 async def take_photo_or_video(message: Message, state: FSMContext):
     storage = await state.get_data()
     if message.photo:
@@ -228,6 +228,9 @@ async def take_photo_or_video(message: Message, state: FSMContext):
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
             await message.answer(replica.replica)
+    elif message.video_note:
+        replica = await db.get_row(BotReplicas, unique_name='videonote_warning')
+        await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
@@ -235,9 +238,17 @@ async def take_photo_or_video(message: Message, state: FSMContext):
 
 @profile_router.callback_query(States.add_or_no_media, F.data == 'yes_more_media')
 async def yes_add_more_media(call: CallbackQuery, state: FSMContext):
-    replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
-    await call.message.answer(replica.replica.replace('|n', '\n'))
-    await state.set_state(States.send_video_or_photo)
+    user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
+    list_media = json.loads(user_data.media).get('media')
+    if len(list_media) == 5:
+        replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+        await call.message.answer(replica.replica.replace('|n', '\n'),
+                             reply_markup=create_goto_profile_if_limit_photo_button())
+        await state.clear()
+    else:
+        replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
+        await call.message.answer(replica.replica.replace('|n', '\n'))
+        await state.set_state(States.send_video_or_photo)
 
 
 @profile_router.callback_query(States.add_or_no_media, F.data == 'no_more_media')

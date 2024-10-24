@@ -154,7 +154,7 @@ async def add_new_media(call: CallbackQuery, state: FSMContext):
         await call.message.answer(replica.replica, reply_markup=create_cancel_button())
         await state.set_state(States.send_new_photo_or_video)
 
-@edit_profile_router.message(States.send_new_photo_or_video, F.content_type.in_({'photo', 'video'}))
+@edit_profile_router.message(States.send_new_photo_or_video, F.content_type.in_({'photo', 'video', 'video_note'}))
 async def take_new_photo_or_video(message: Message, state: FSMContext):
     storage = await state.get_data()
     content_type = None
@@ -178,16 +178,10 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             else:
                 file_id = message.photo[-1].file_id
                 list_media.insert(0, [content_type, file_id])
-                if len(list_media) == 5:
-                    replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-                    await message.answer(replica.replica.replace('|n', '\n'),
-                                         reply_markup=create_goto_profile_if_limit_photo_button())
-                    await state.clear()
-                else:
-                    await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                             media=json.dumps({'media': list_media}))
-                    await func_for_send_prof(user_id=message.from_user.id)
-                    await state.clear()
+                await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
+                                         media=json.dumps({'media': list_media}))
+                await func_for_send_prof(user_id=message.from_user.id)
+                await state.clear()
     elif message.video:
         content_type = 'video'
         if message.media_group_id:
@@ -216,6 +210,9 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
                 await message.answer(replica.replica)
+    elif message.video_note:
+        replica = await db.get_row(BotReplicas, unique_name='videonote_warning')
+        await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
@@ -255,7 +252,7 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
     except Exception as exc:
         logger.error(f'Update user media failed {exc}')
 
-@edit_profile_router.message(States.send_media_before_delete, F.content_type.in_({'photo', 'video'}))
+@edit_profile_router.message(States.send_media_before_delete, F.content_type.in_({'photo', 'video', 'video_note'}))
 async def send_media_before_delete(message: Message, state: FSMContext):
     storage = await state.get_data()
     if message.photo:
@@ -310,6 +307,9 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
                 await message.answer(replica.replica)
+    elif message.video_note:
+        replica = await db.get_row(BotReplicas, unique_name='videonote_warning')
+        await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
