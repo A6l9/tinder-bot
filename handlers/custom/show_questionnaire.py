@@ -19,7 +19,10 @@ async def show_questionnaire(message: Message):
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if user_data and user_data.done_questionnaire:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        try:
+            await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        except:
+            ...
         if json.loads(user_data.media).get('media'):
             content = json.loads(user_data.media).get('media')
             if user_data.about_yourself:

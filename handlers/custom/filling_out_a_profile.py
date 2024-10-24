@@ -26,7 +26,7 @@ async def start_completion(call: CallbackQuery, state: FSMContext):
     if not user:
         try:
             temp_storage = user_manager.get_user(call.from_user.id)
-            temp_storage.start_message = call.message.message_id
+            temp_storage.start_message = call.message
             await db.add_row(Users, tg_user_id=str(call.from_user.id))
         except Exception as exc:
             logger.error(exc)
@@ -145,8 +145,11 @@ async def location_share_take_answer(message: Message, state: FSMContext):
     if location:
         ...
     else:
+        try:
+            await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
+        except:
+            ...
         replica = await db.get_row(BotReplicas, unique_name='location_false')
-        await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
         await message.answer(replica.replica, reply_markup=create_location_buttons())
 
 

@@ -18,7 +18,7 @@ async def start(message: Message):
     user = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     if not user:
         try:
-            temp_storage.start_message = message.message_id
+            temp_storage.start_message = message
             await db.add_row(Users, tg_user_id=str(message.from_user.id))
             replica = await db.get_row(BotReplicas, unique_name='start_message')
             await message.answer(replica.replica, reply_markup=create_start_button())

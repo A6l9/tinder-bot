@@ -9,7 +9,10 @@ from utils.clear_back import clear_back
 async def func_for_send_prof(user_id, message):
     temp_storage = user_manager.get_user(user_id)
     temp_storage.num_elem = 0
-    await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...
     user = await db.get_row(Users, tg_user_id=str(user_id))
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if json.loads(user.media).get('media'):
