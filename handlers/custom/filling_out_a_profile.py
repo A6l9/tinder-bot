@@ -204,9 +204,15 @@ async def take_photo_or_video(message: Message, state: FSMContext):
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                          media=json.dumps({'media': list_photos}),
                                          video='')
-                replica = await db.get_row(BotReplicas, unique_name='add_more_media')
-                await message.answer(replica.replica, reply_markup=create_add_or_no_buttons())
-                await state.set_state(States.add_or_no_media)
+                if len(list_photos) == 5:
+                    replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
+                    await message.answer(replica.replica.replace('|n', '\n'),
+                                         reply_markup=create_goto_profile_if_limit_photo_button())
+                    await state.clear()
+                else:
+                    replica = await db.get_row(BotReplicas, unique_name='add_more_media')
+                    await message.answer(replica.replica, reply_markup=create_add_or_no_buttons())
+                    await state.set_state(States.add_or_no_media)
     elif message.video:
         if message.video.duration <=15:
             file_id = message.video.file_id
@@ -240,6 +246,7 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
 
 @profile_router.callback_query(F.data == 'ok_goto_profile')
 async def goto_profile(call: CallbackQuery):
+    await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
     await func_for_send_prof(call.from_user.id)
