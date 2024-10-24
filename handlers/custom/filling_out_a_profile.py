@@ -1,5 +1,6 @@
 import asyncio
 import json
+
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from loguru import logger
@@ -25,7 +26,7 @@ async def start_completion(call: CallbackQuery, state: FSMContext):
     if not user:
         try:
             temp_storage = user_manager.get_user(call.from_user.id)
-            temp_storage.start_message = call.message.message_id - 1
+            temp_storage.start_message = call.message.message_id
             await db.add_row(Users, tg_user_id=str(call.from_user.id))
         except Exception as exc:
             logger.error(exc)
@@ -275,7 +276,7 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
-    await func_for_send_prof(call.from_user.id, call.message.message_id)
+    await func_for_send_prof(call.from_user.id, call.message)
     await state.clear()
 
 
@@ -284,4 +285,4 @@ async def goto_profile(call: CallbackQuery):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
-    await func_for_send_prof(call.from_user.id, call.message.message_id)
+    await func_for_send_prof(call.from_user.id, call.message)

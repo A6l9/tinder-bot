@@ -27,8 +27,8 @@ async def start(message: Message):
             await message.answer('Произошла ошибка, попробуйте еще раз!')
     else:
         if user.done_questionnaire:
-            temp_storage.start_message = message.message_id
-            await func_for_send_prof(message.from_user.id, message.message_id)
+            # temp_storage.start_message = message.message_id
+            await func_for_send_prof(message.from_user.id, message=message)
         else:
             replica = await db.get_row(BotReplicas, unique_name='start_message')
             await message.answer(replica.replica, reply_markup=create_start_button())
