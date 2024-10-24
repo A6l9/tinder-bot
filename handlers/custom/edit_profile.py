@@ -9,7 +9,7 @@ from storage.states import States
 from loader import db, bot, user_manager
 from database.models import BotReplicas, Users, Cities
 from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
-    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons
+    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_location_buttons
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
 from utils.haversine import haversine
@@ -108,9 +108,11 @@ async def edit_location_share_take_answer(message: Message, state: FSMContext):
     cities = await db.get_row(Cities, to_many=True)
     latitude = message.location.latitude
     longitude = message.location.longitude
+    location = False
     for city in cities:
         distance = haversine(float(city.geo_lat), float(city.geo_lon), float(latitude), float(longitude))
         if distance < 20:
+            location = True
             try:
                 await bot.send_message(message.from_user.id, 'Обработка...', reply_markup=ReplyKeyboardRemove())
                 await asyncio.sleep(1)
@@ -125,6 +127,13 @@ async def edit_location_share_take_answer(message: Message, state: FSMContext):
             except Exception as exc:
                 logger.error(f'Error updating user location: {exc}')
             break
+    else:
+        if location:
+            ...
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='location_false')
+            await message.delete(chat_id=message.from_user.id, message_id=message.message_id - 1)
+            await message.answer(replica.replica, reply_markup=create_location_buttons())
 
 @edit_profile_router.message(States.description_question_edit)
 async def edit_about_yourself_get_answer(message: Message, state: FSMContext):

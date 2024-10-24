@@ -111,11 +111,11 @@ async def location_share_take_answer(message: Message, state: FSMContext):
     cities = await db.get_row(Cities, to_many=True)
     latitude = message.location.latitude
     longitude = message.location.longitude
-    location = True
+    location = False
     for city in cities:
         distance = haversine(float(city.geo_lat), float(city.geo_lon), float(latitude), float(longitude))
         if distance < 20:
-
+            location = True
             try:
                 await bot.send_message(message.from_user.id, 'Обработка...', reply_markup=ReplyKeyboardRemove())
                 await asyncio.sleep(1)
