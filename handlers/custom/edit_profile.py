@@ -9,7 +9,8 @@ from storage.states import States
 from loader import db, bot, user_manager
 from database.models import BotReplicas, Users, Cities
 from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
-    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons
+    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, \
+    create_goto_profile_if_limit_photo_button
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
 from utils.haversine import haversine
@@ -49,20 +50,12 @@ async def name_question_edit_take_answer_from_button(call: CallbackQuery, state:
 
 @edit_profile_router.message(States.name_question_edit)
 async def name_question_edit_take_answer_from_message(message: Message, state: FSMContext):
-    get_username = await db.get_row(Users, username=str(message.text))
-    if not get_username:
-        try:
-            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
-            await func_for_send_prof(user_id=message.from_user.id)
-            await state.clear()
-        except Exception as exc:
-            logger.error(f'Error updating username: {exc}')
-    elif get_username and get_username.tg_user_id == str(message.from_user.id):
-        replica = await db.get_row(BotReplicas, unique_name='write_name_another')
-        await message.answer(replica.replica, reply_markup=create_cancel_button())
-    else:
-        replica = await db.get_row(BotReplicas, unique_name='name_is_busy')
-        await message.answer(replica.replica, reply_markup=create_cancel_button())
+    try:
+        await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
+        await func_for_send_prof(user_id=message.from_user.id)
+        await state.clear()
+    except Exception as exc:
+        logger.error(f'Error updating username: {exc}')
 
 @edit_profile_router.callback_query(F.data.startswith('editlocation_'))
 async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
@@ -150,44 +143,79 @@ async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
 
 @edit_profile_router.callback_query(F.data == 'add_media')
 async def add_new_media(call: CallbackQuery, state: FSMContext):
-    replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')
-    await call.message.answer(replica.replica, reply_markup=create_cancel_button())
-    await state.set_state(States.send_new_photo_or_video)
+    user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
+    list_media = json.loads(user_data.media).get('media')
+    if len(list_media) == 5:
+        replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+        await call.message.answer(replica.replica.replace('|n', '\n'), reply_markup=create_cancel_button())
+        await state.clear()
+    else:
+        replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')
+        await call.message.answer(replica.replica, reply_markup=create_cancel_button())
+        await state.set_state(States.send_new_photo_or_video)
 
 @edit_profile_router.message(States.send_new_photo_or_video, F.content_type.in_({'photo', 'video'}))
 async def take_new_photo_or_video(message: Message, state: FSMContext):
     storage = await state.get_data()
+    content_type = None
     if message.photo:
+        content_type = 'photo'
         if message.media_group_id:
             if storage.get(message.media_group_id):
                 ...
             else:
                 await state.update_data({message.media_group_id: True})
-                replica = await db.get_row(BotReplicas, unique_name='only_one_photo')
+                replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
                 await message.answer(replica.replica)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-            list_photos = json.loads(user_data.media).get('media')
-            if len(list_photos) == 5:
-                replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
+            list_media = json.loads(user_data.media).get('media')
+            if len(list_media) == 5:
+                replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
                 await func_for_send_prof(user_id=message.from_user.id)
                 await state.clear()
             else:
                 file_id = message.photo[-1].file_id
-                list_photos.insert(0, file_id)
-                await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_photos}),
-                                         video='')
-                await func_for_send_prof(user_id=message.from_user.id)
-                await state.clear()
+                list_media.insert(0, [content_type, file_id])
+                if len(list_media) == 5:
+                    replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+                    await message.answer(replica.replica.replace('|n', '\n'),
+                                         reply_markup=create_goto_profile_if_limit_photo_button())
+                    await state.clear()
+                else:
+                    await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
+                                             media=json.dumps({'media': list_media}))
+                    await func_for_send_prof(user_id=message.from_user.id)
+                    await state.clear()
     elif message.video:
-        if message.video.duration <=15:
-            await func_for_send_prof(user_id=message.from_user.id)
-            await state.clear()
+        content_type = 'video'
+        if message.media_group_id:
+            if storage.get(message.media_group_id):
+                ...
+            else:
+                await state.update_data({message.media_group_id: True})
+                replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
+                await message.answer(replica.replica)
         else:
-            replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
-            await message.answer(replica.replica)
+            if message.video.duration <=15:
+                user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+                list_media = json.loads(user_data.media).get('media')
+                if len(list_media) == 5:
+                    replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+                    await message.answer(replica.replica.replace('|n', '\n'))
+                    await func_for_send_prof(user_id=message.from_user.id)
+                    await state.clear()
+                else:
+                    file_id = message.video.file_id
+                    list_media.insert(0, [content_type, file_id])
+                    await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
+                                             media=json.dumps({'media': list_media}))
+                    await func_for_send_prof(user_id=message.from_user.id)
+                    await state.clear()
+            else:
+                replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
+                await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
@@ -231,39 +259,57 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
 async def send_media_before_delete(message: Message, state: FSMContext):
     storage = await state.get_data()
     if message.photo:
+        content_type = 'photo'
         if message.media_group_id:
             if storage.get(message.media_group_id):
                 ...
             else:
                 await state.update_data({message.media_group_id: True})
-                replica = await db.get_row(BotReplicas, unique_name='only_one_photo')
+                replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
                 await message.answer(replica.replica)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-            list_photos = json.loads(user_data.media).get('media')
-            if len(list_photos) == 5:
-                replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
+            list_media = json.loads(user_data.media).get('media')
+            if len(list_media) == 5:
+                replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
                 await func_for_send_prof(user_id=message.from_user.id)
                 await state.clear()
             else:
-                temp_storage = user_manager.get_user(message.from_user.id)
-                media = temp_storage.photo_storage[message.from_user.id]
-                media.pop(temp_storage.num_elem)
                 file_id = message.photo[-1].file_id
-                list_photos.insert(0, file_id)
+                list_media.insert(0, [content_type, file_id])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_photos}),
-                                         video='')
+                                         media=json.dumps({'media': list_media}))
                 await func_for_send_prof(user_id=message.from_user.id)
                 await state.clear()
     elif message.video:
-        if message.video.duration <= 15:
-            await func_for_send_prof(user_id=message.from_user.id)
-            await state.clear()
+        content_type = 'video'
+        if message.media_group_id:
+            if storage.get(message.media_group_id):
+                ...
+            else:
+                await state.update_data({message.media_group_id: True})
+                replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
+                await message.answer(replica.replica)
         else:
-            replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
-            await message.answer(replica.replica)
+            if message.video.duration <= 15:
+                user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+                list_media = json.loads(user_data.media).get('media')
+                if len(list_media) == 5:
+                    replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+                    await message.answer(replica.replica.replace('|n', '\n'))
+                    await func_for_send_prof(user_id=message.from_user.id)
+                    await state.clear()
+                else:
+                    file_id = message.video.file_id
+                    list_media.insert(0, [content_type, file_id])
+                    await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
+                                             media=json.dumps({'media': list_media}))
+                    await func_for_send_prof(user_id=message.from_user.id)
+                    await state.clear()
+            else:
+                replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
+                await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)

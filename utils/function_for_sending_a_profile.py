@@ -19,24 +19,23 @@ async def func_for_send_prof(user_id):
             description = user.about_yourself
         else:
             description = 'Нет описания'
-        if content:
+        if content[0][0] == 'photo':
             await bot.send_photo(chat_id=user_id,
-                                 photo=content[0], caption=replica.replica.replace('|n', '\n').format(
+                                 photo=content[0][1], caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
                     age=user.age,
-                    city=user.address,
+                    city=user.city,
                     desc=description),
                                  reply_markup=await create_points_buttons(user_id))
-    elif user.video:
-        content = user.video
-        if user.about_yourself:
-            description = user.about_yourself
-        else:
-            description = 'Нет описания'
-        await bot.send_video(chat_id=user_id,
-                             video=content, caption=replica.replica.replace('|n', '\n').format(
-                name=user.username,
-                age=user.age,
-                city=user.address,
-                desc=description),
-                             reply_markup=await create_points_buttons(user_id))
+        elif content[0][0] == 'video':
+            if user.about_yourself:
+                description = user.about_yourself
+            else:
+                description = 'Нет описания'
+            await bot.send_video(chat_id=user_id,
+                                 video=content[0][1], caption=replica.replica.replace('|n', '\n').format(
+                    name=user.username,
+                    age=user.age,
+                    city=user.city,
+                    desc=description),
+                                 reply_markup=await create_points_buttons(user_id))

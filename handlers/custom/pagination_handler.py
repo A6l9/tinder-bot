@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, InputMediaPhoto
+from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 from loader import db, bot, user_manager
 from database.models import Users, BotReplicas
 import json
@@ -22,8 +22,8 @@ async def move_left(call: CallbackQuery):
             description = user_data.about_yourself
         else:
             description = 'Нет описания'
-        if content:
-            media_type = InputMediaPhoto(media=content[temp_storage.num_elem],
+        if content[temp_storage.num_elem][0] == 'photo':
+            media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                                              name=user_data.username,
                                                              age=user_data.age,
@@ -32,19 +32,20 @@ async def move_left(call: CallbackQuery):
             await bot.edit_message_media(chat_id=call.from_user.id,
                                  media=media_type, message_id=call.message.message_id,
                                  reply_markup=await create_points_buttons(call.from_user.id))
-    elif user_data.video:
-        content = user_data.video
-        if user_data.about_yourself:
-            description = user_data.about_yourself
-        else:
-            description = 'Нет описания'
-        await bot.send_video(chat_id=call.from_user.id,
-                             video=content, caption=replica.replica.replace('|n', '\n').format(
-                name=user_data.username,
-                age=user_data.age,
-                city=user_data.city,
-                desc=description),
-                             reply_markup=await create_points_buttons(call.from_user.id))
+        elif content[temp_storage.num_elem][0] == 'video':
+            if user_data.about_yourself:
+                description = user_data.about_yourself
+            else:
+                description = 'Нет описания'
+            media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             city=user_data.city,
+                                             desc=description))
+            await bot.edit_message_media(chat_id=call.from_user.id,
+                                 media=media_type, message_id=call.message.message_id,
+                                 reply_markup=await create_points_buttons(call.from_user.id))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await call.answer(replica.replica)
@@ -63,29 +64,30 @@ async def move_right(call: CallbackQuery):
             description = user_data.about_yourself
         else:
             description = 'Нет описания'
-        if content:
-            media_type = InputMediaPhoto(media=content[temp_storage.num_elem],
+        if content[temp_storage.num_elem][0] == 'photo':
+            media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
-                                                             name=user_data.username,
-                                                             age=user_data.age,
-                                                             city=user_data.city,
-                                                             desc=description))
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             city=user_data.city,
+                                             desc=description))
             await bot.edit_message_media(chat_id=call.from_user.id,
-                                 media=media_type, message_id=call.message.message_id,
-                                 reply_markup=await create_points_buttons(call.from_user.id))
-    elif user_data.video:
-        content = user_data.video
-        if user_data.about_yourself:
-            description = user_data.about_yourself
-        else:
-            description = 'Нет описания'
-        await bot.send_video(chat_id=call.from_user.id,
-                             video=content, caption=replica.replica.replace('|n', '\n').format(
-                name=user_data.username,
-                age=user_data.age,
-                city=user_data.city,
-                desc=description),
-                             reply_markup=await create_points_buttons(call.from_user.id))
+                                         media=media_type, message_id=call.message.message_id,
+                                         reply_markup=await create_points_buttons(call.from_user.id))
+        elif content[temp_storage.num_elem][0] == 'video':
+            if user_data.about_yourself:
+                description = user_data.about_yourself
+            else:
+                description = 'Нет описания'
+            media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             city=user_data.city,
+                                             desc=description))
+            await bot.edit_message_media(chat_id=call.from_user.id,
+                                         media=media_type, message_id=call.message.message_id,
+                                         reply_markup=await create_points_buttons(call.from_user.id))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await call.answer(replica.replica)

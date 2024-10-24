@@ -24,27 +24,26 @@ async def show_questionnaire(message: Message):
             description = user_data.about_yourself
         else:
             description = 'Нет описания'
-        if content:
+        if content[temp_storage.num_elem][0] == 'photo':
             await bot.send_photo(chat_id=message.from_user.id,
-                            photo=content[temp_storage.num_elem], caption=replica.replica.replace('|n', '\n').format(
+                            photo=content[temp_storage.num_elem][1], caption=replica.replica.replace('|n', '\n').format(
                                                              name=user_data.username,
                                                              age=user_data.age,
                                                              city=user_data.city,
                                                              desc=description),
                                                              reply_markup=await create_points_buttons(message.from_user.id))
-    elif user_data.video:
-        content = user_data.video
-        if user_data.about_yourself:
-            description = user_data.about_yourself
-        else:
-            description = 'Нет описания'
-        await bot.send_video(chat_id=message.from_user.id,
-                             video=content, caption=replica.replica.replace('|n', '\n').format(
-                                                            name=user_data.username,
-                                                            age=user_data.age,
-                                                            city=user_data.city,
-                                                            desc=description),
-                                                            reply_markup=await create_points_buttons(message.from_user.id))
+        elif content[temp_storage.num_elem][0] == 'video':
+            if user_data.about_yourself:
+                description = user_data.about_yourself
+            else:
+                description = 'Нет описания'
+            await bot.send_video(chat_id=message.from_user.id,
+                                 video=content[temp_storage.num_elem][1], caption=replica.replica.replace('|n', '\n').format(
+                                                                name=user_data.username,
+                                                                age=user_data.age,
+                                                                city=user_data.city,
+                                                                desc=description),
+                                                                reply_markup=await create_points_buttons(message.from_user.id))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await message.answer(replica.replica)
