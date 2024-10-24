@@ -9,8 +9,7 @@ from storage.states import States
 from loader import db, bot, user_manager
 from database.models import BotReplicas, Users, Cities
 from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
-    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, \
-    create_goto_profile_if_limit_photo_button
+    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
 from utils.haversine import haversine

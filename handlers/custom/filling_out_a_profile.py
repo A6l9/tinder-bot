@@ -111,9 +111,11 @@ async def location_share_take_answer(message: Message, state: FSMContext):
     cities = await db.get_row(Cities, to_many=True)
     latitude = message.location.latitude
     longitude = message.location.longitude
+    location = True
     for city in cities:
         distance = haversine(float(city.geo_lat), float(city.geo_lon), float(latitude), float(longitude))
         if distance < 20:
+
             try:
                 await bot.send_message(message.from_user.id, 'Обработка...', reply_markup=ReplyKeyboardRemove())
                 await asyncio.sleep(1)
@@ -129,6 +131,14 @@ async def location_share_take_answer(message: Message, state: FSMContext):
             except Exception as exc:
                 logger.error(f'Error updating user location: {exc}')
             break
+    else:
+        if location:
+            ...
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='location_false')
+            await message.delete(chat_id=message.from_user.id, message_id=message.message_id - 1)
+            await message.answer(replica.replica, reply_markup=create_location_buttons())
+
 
 @profile_router.callback_query(F.data.startswith('name_'))
 async def name_question_take_answer_from_button(call: CallbackQuery, state: FSMContext):
