@@ -18,8 +18,8 @@ async def show_questionnaire(message: Message):
     user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
-    if json.loads(user_data.photos).get('photos'):
-        content = json.loads(user_data.photos).get('photos')
+    if json.loads(user_data.media).get('media'):
+        content = json.loads(user_data.media).get('media')
         if user_data.about_yourself:
             description = user_data.about_yourself
         else:

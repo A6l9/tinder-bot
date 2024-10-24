@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, declared_attr
-from utils.config import POSTGRES_DB, POSTGRES_PASSWORD, HOST, PORT, POSTGRES_USER
+from config.config import POSTGRES_DB, POSTGRES_PASSWORD, HOST, PORT, POSTGRES_USER
 
 
 DB_HOST = HOST

@@ -1,17 +1,16 @@
 import asyncio
 import json
-
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from loguru import logger
-
+from utils.function_for_sending_a_profile import func_for_send_prof
 from utils.haversine import haversine
-
 from loader import db
 from database.models import BotReplicas, Users, Cities
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_buttons, create_location_buttons,
-                                         create_name_question, create_buttons_cities, create_skip_button,
+                                         create_name_question, create_buttons_cities, create_skip_button, \
+                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button
                                          )
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
@@ -193,31 +192,54 @@ async def take_photo_or_video(message: Message, state: FSMContext):
                 await message.answer(replica.replica)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-            list_photos = json.loads(user_data.photos).get('photos')
+            list_photos = json.loads(user_data.media).get('media')
             if len(list_photos) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
-                await message.answer(replica.replica.replace('|n', '\n'))
+                await message.answer(replica.replica.replace('|n', '\n'),
+                                     reply_markup=create_goto_profile_if_limit_photo_button())
                 await state.clear()
             else:
                 file_id = message.photo[-1].file_id
-                list_photos.append(file_id)
+                list_photos.insert(0, file_id)
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         photos=json.dumps({'photos': list_photos}),
+                                         media=json.dumps({'media': list_photos}),
                                          video='')
-                replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
-                await message.answer(replica.replica)
-                await db.update_user_row(Users, tg_user_id=str(message.from_user.id), done_questionnaire=True)
-                await state.clear()
+                replica = await db.get_row(BotReplicas, unique_name='add_more_media')
+                await message.answer(replica.replica, reply_markup=create_add_or_no_buttons())
+                await state.set_state(States.add_or_no_media)
     elif message.video:
         if message.video.duration <=15:
             file_id = message.video.file_id
             await db.update_user_row(model=Users, tg_user_id=message.from_user.id, video=str(file_id), photo='')
-            replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
-            await message.answer(replica.replica)
-            await state.clear()
+            replica = await db.get_row(BotReplicas, unique_name='add_more_media')
+            await message.answer(replica.replica, reply_markup=create_add_or_no_buttons())
+            await state.set_state(States.add_or_no_media)
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
             await message.answer(replica.replica)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
+
+
+@profile_router.callback_query(States.add_or_no_media, F.data == 'yes_more_media')
+async def yes_add_more_media(call: CallbackQuery, state: FSMContext):
+    replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
+    await call.message.answer(replica.replica.replace('|n', '\n'))
+    await state.set_state(States.send_video_or_photo)
+
+
+@profile_router.callback_query(States.add_or_no_media, F.data == 'no_more_media')
+async def no_more_media(call: CallbackQuery, state: FSMContext):
+    await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
+    replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
+    await call.message.answer(replica.replica)
+    await func_for_send_prof(call.from_user.id)
+    await state.clear()
+
+
+@profile_router.callback_query(F.data == 'ok_goto_profile')
+async def goto_profile(call: CallbackQuery):
+    replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
+    await call.message.answer(replica.replica)
+    await func_for_send_prof(call.from_user.id)

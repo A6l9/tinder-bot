@@ -104,6 +104,10 @@ pagination_buttons = (
 
 edit_points_buttons = (
     InlineKeyboardButton(
+        text='Добавить медиа',
+        callback_data='add_media'
+    ),
+    InlineKeyboardButton(
         text='Изменить имя',
         callback_data='edit_name'
     ),
@@ -114,14 +118,6 @@ edit_points_buttons = (
     InlineKeyboardButton(
         text='Изменить описание',
         callback_data='edit_description'
-    ),
-    InlineKeyboardButton(
-        text='Добавить медиа',
-        callback_data='add_media'
-    ),
-    InlineKeyboardButton(
-        text='Заполнить анкету заново',
-        callback_data='change_questionnaire'
     )
 )
 
@@ -148,5 +144,23 @@ delete_or_no_button = (
     InlineKeyboardButton(
         text='Да',
         callback_data='yes'
+    ),
+)
+
+add_or_no_buttons = (
+    InlineKeyboardButton(
+        text='Да',
+        callback_data='yes_more_media'
+    ),
+    InlineKeyboardButton(
+        text='Нет',
+        callback_data='no_more_media'
+    )
+)
+
+show_my_profile_if_limit_photo_button = (
+    InlineKeyboardButton(
+        text='Хорошо, перейти к профилю',
+        callback_data='ok_goto_profile'
     ),
 )

@@ -3,7 +3,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from keyboards.buttons import start_button, sex_buttons, \
     preference_buttons, location_buttons, skip_button, edit_button, edit_points_buttons, \
     location_edit_buttons, pagination_buttons, pagination_buttons_start, \
-    pagination_buttons_middle, pagination_buttons_end, cancel_button, delete_or_no_button
+    pagination_buttons_middle, pagination_buttons_end, cancel_button, delete_or_no_button, \
+    add_or_no_buttons, show_my_profile_if_limit_photo_button
 from loader import db
 from database.models import Users
 import json
@@ -75,7 +76,7 @@ def create_change_button():
 async def create_points_buttons(user_id):
     temp_storage = user_manager.get_user(user_id)
     user = await db.get_row(Users, tg_user_id=str(user_id))
-    temp_storage.photo_storage[user_id] = json.loads(user.photos).get('photos')
+    temp_storage.photo_storage[user_id] = json.loads(user.media).get('media')
     builder = InlineKeyboardBuilder()
     if len(temp_storage.photo_storage[user_id]) == 1:
         builder.row(*pagination_buttons)
@@ -120,6 +121,22 @@ def create_delete_or_no_buttons():
         [
             *delete_or_no_button,
             *cancel_button
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def create_add_or_no_buttons():
+    inline_kb_list = [
+        [
+            *add_or_no_buttons
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def create_goto_profile_if_limit_photo_button():
+    inline_kb_list = [
+        [
+            *show_my_profile_if_limit_photo_button
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

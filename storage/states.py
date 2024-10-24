@@ -17,3 +17,4 @@ class States(StatesGroup):
     send_new_photo_or_video = State()
     delete_media = State()
     send_media_before_delete = State()
+    add_or_no_media = State()

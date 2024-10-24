@@ -221,7 +221,7 @@ class BaseInterface:
 
     async def search_cities(self, fragment: str):
         async with self.async_ses() as session:
-            query = select(Cities).where(Cities.address.ilike(f'%{fragment}%'))
+            query = select(Cities).where(Cities.city.ilike(f'%{fragment}%'))
             result = await session.execute(query)
             cities = result.scalars().all()
             res = [*cities]

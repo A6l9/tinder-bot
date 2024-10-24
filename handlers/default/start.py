@@ -1,12 +1,12 @@
 import json
 
 from aiogram import Router
-from aiogram.types import Message, InputMediaPhoto
+from aiogram.types import Message
 from aiogram.filters import CommandStart
 from loader import db, bot
 from loguru import logger
 from database.models import Users, BotReplicas
-from keyboards.inline.inline_kbs import create_start_button, create_change_button, create_points_buttons
+from keyboards.inline.inline_kbs import create_start_button, create_points_buttons
 
 start_router = Router()
 
@@ -27,9 +27,9 @@ async def start(message: Message):
     else:
         if user.done_questionnaire:
             content = None
-            replica = await db.get_row(BotReplicas, unique_name='here_your_profile')
-            if json.loads(user.photos).get('photos'):
-                content = json.loads(user.photos).get('photos')
+            replica = await db.get_row(BotReplicas, unique_name='show_profile')
+            if json.loads(user.media).get('media'):
+                content = json.loads(user.media).get('media')
                 if user.about_yourself:
                     description = user.about_yourself
                 else:

@@ -9,7 +9,7 @@ async def add_cities():
     await db.initial()
     list_to_add = []
     list_cities = [i.postal_code for i in await db.get_row(Cities, to_many=True)]
-    with open('city.csv', 'r') as file:
+    with open('../misc/city.csv', 'r') as file:
         reader = csv.reader(file)
         next(reader)
         for i_elem in reader:

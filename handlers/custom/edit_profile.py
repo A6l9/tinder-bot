@@ -19,12 +19,6 @@ from utils.function_for_sending_a_profile import func_for_send_prof
 edit_profile_router = Router()
 
 
-@edit_profile_router.callback_query(F.data == 'change_questionnaire')
-async def change_questionnaire_again(call: CallbackQuery, state: FSMContext):
-    await state.set_state(States.age_question)
-    replica = await db.get_row(BotReplicas, unique_name='age_question')
-    await call.message.answer(replica.replica)
-
 @edit_profile_router.callback_query(F.data.startswith('edit_'))
 async def change_distributor(call: CallbackQuery, state: FSMContext):
     point = call.data.split('_')[1]
@@ -173,7 +167,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                 await message.answer(replica.replica)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-            list_photos = json.loads(user_data.photos).get('photos')
+            list_photos = json.loads(user_data.media).get('media')
             if len(list_photos) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
@@ -183,7 +177,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                 file_id = message.photo[-1].file_id
                 list_photos.insert(0, file_id)
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         photos=json.dumps({'photos': list_photos}),
+                                         media=json.dumps({'media': list_photos}),
                                          video='')
                 await func_for_send_prof(user_id=message.from_user.id)
                 await state.clear()
@@ -208,11 +202,11 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @edit_profile_router.callback_query(F.data == 'delete')
 async def delete_media_question(call: CallbackQuery, state: FSMContext):
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    if len(json.loads(user.photos).get('photos')) > 1:
+    if len(json.loads(user.media).get('media')) > 1:
         replica = await db.get_row(BotReplicas, unique_name='delete_question')
         await call.message.answer(replica.replica, reply_markup=create_delete_or_no_buttons())
         await state.set_state(States.delete_media)
-    elif len(json.loads(user.photos).get('photos')) == 1:
+    elif len(json.loads(user.media).get('media')) == 1:
         replica = await db.get_row(BotReplicas, unique_name='cant_delete')
         await call.message.answer(replica.replica, reply_markup=create_cancel_button())
         await state.set_state(States.send_media_before_delete)
@@ -222,10 +216,10 @@ async def delete_media_question(call: CallbackQuery, state: FSMContext):
 async def delete_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    user_media = json.loads(user.photos)['photos']
+    user_media = json.loads(user.media)['media']
     user_media.pop(temp_storage.num_elem)
     try:
-        await db.update_user_row(Users, tg_user_id=str(call.from_user.id), photos=json.dumps({'photos': user_media}))
+        await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({'media': user_media}))
         replica = await db.get_row(BotReplicas, unique_name='delete_complete')
         await call.message.answer(replica.replica)
         await func_for_send_prof(user_id=call.from_user.id)
@@ -235,7 +229,6 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
 
 @edit_profile_router.message(States.send_media_before_delete, F.content_type.in_({'photo', 'video'}))
 async def send_media_before_delete(message: Message, state: FSMContext):
-    x = user_manager
     storage = await state.get_data()
     if message.photo:
         if message.media_group_id:
@@ -247,7 +240,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 await message.answer(replica.replica)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-            list_photos = json.loads(user_data.photos).get('photos')
+            list_photos = json.loads(user_data.media).get('media')
             if len(list_photos) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='photo_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
@@ -260,7 +253,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 file_id = message.photo[-1].file_id
                 list_photos.insert(0, file_id)
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         photos=json.dumps({'photos': list_photos}),
+                                         media=json.dumps({'media': list_photos}),
                                          video='')
                 await func_for_send_prof(user_id=message.from_user.id)
                 await state.clear()
