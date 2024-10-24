@@ -5,12 +5,12 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from loguru import logger
 from utils.function_for_sending_a_profile import func_for_send_prof
 from utils.haversine import haversine
-from loader import db
+from loader import db, user_manager
 from database.models import BotReplicas, Users, Cities
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_buttons, create_location_buttons,
                                          create_name_question, create_buttons_cities, create_skip_button, \
-                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button
+                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button,
                                          )
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
@@ -20,6 +20,16 @@ profile_router = Router()
 
 @profile_router.callback_query(F.data == 'start_completion')
 async def start_completion(call: CallbackQuery, state: FSMContext):
+    await db.initial()
+    user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
+    if not user:
+        try:
+            temp_storage = user_manager.get_user(call.from_user.id)
+            temp_storage.start_message = call.message.message_id - 1
+            await db.add_row(Users, tg_user_id=str(call.from_user.id))
+        except Exception as exc:
+            logger.error(exc)
+            await call.message.answer('Произошла ошибка, попробуйте еще раз!')
     await state.set_state(States.age_question)
     replica = await db.get_row(BotReplicas, unique_name='age_question')
     await call.message.edit_text(replica.replica)
@@ -131,13 +141,12 @@ async def location_share_take_answer(message: Message, state: FSMContext):
             except Exception as exc:
                 logger.error(f'Error updating user location: {exc}')
             break
+    if location:
+        ...
     else:
-        if location:
-            ...
-        else:
-            replica = await db.get_row(BotReplicas, unique_name='location_false')
-            await message.delete(chat_id=message.from_user.id, message_id=message.message_id - 1)
-            await message.answer(replica.replica, reply_markup=create_location_buttons())
+        replica = await db.get_row(BotReplicas, unique_name='location_false')
+        await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
+        await message.answer(replica.replica, reply_markup=create_location_buttons())
 
 
 @profile_router.callback_query(F.data.startswith('name_'))
@@ -266,7 +275,7 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
-    await func_for_send_prof(call.from_user.id)
+    await func_for_send_prof(call.from_user.id, call.message.message_id)
     await state.clear()
 
 
@@ -275,4 +284,4 @@ async def goto_profile(call: CallbackQuery):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
-    await func_for_send_prof(call.from_user.id)
+    await func_for_send_prof(call.from_user.id, call.message.message_id)

@@ -2,18 +2,20 @@ from loader import db, bot
 import json
 from database.models import BotReplicas, Users
 from keyboards.inline.inline_kbs import create_points_buttons
-from misc.temp_storage import UserManager
+from loader import user_manager
 
 
-user_manager = UserManager()
-
-
-async def func_for_send_prof(user_id):
+async def func_for_send_prof(user_id, message_id):
     temp_storage = user_manager.get_user(user_id)
     temp_storage.num_elem = 0
     user = await db.get_row(Users, tg_user_id=str(user_id))
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if json.loads(user.media).get('media'):
+        for i_id in range(message_id  + 1, temp_storage.start_message, -1):
+            try:
+                await bot.delete_message(chat_id=user_id, message_id=i_id)
+            except:
+                ...
         content = json.loads(user.media).get('media')
         if user.about_yourself:
             description = user.about_yourself

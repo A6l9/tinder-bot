@@ -12,6 +12,8 @@ class TempStorage:
             self.user_id = user_id
             self.photo_storage = {self.user_id: []}
             self.num_elem = 0
+            self.id_message = 0
+            self.start_message = 0
 
 class UserManager:
     def __init__(self):

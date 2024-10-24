@@ -21,6 +21,8 @@ edit_profile_router = Router()
 
 @edit_profile_router.callback_query(F.data.startswith('edit_'))
 async def change_distributor(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    temp_storage.id_message = call.message.message_id
     point = call.data.split('_')[1]
     if point == 'name':
         replica = await db.get_row(BotReplicas, unique_name='new_name')
@@ -35,14 +37,12 @@ async def change_distributor(call: CallbackQuery, state: FSMContext):
         await state.set_state(States.description_question_edit)
 
 
-
-
-
 @edit_profile_router.callback_query(F.data.startswith('editname_'))
 async def name_question_edit_take_answer_from_button(call: CallbackQuery, state: FSMContext):
+
     try:
         await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
-        await func_for_send_prof(user_id=call.from_user.id)
+        await func_for_send_prof(user_id=call.from_user.id, message_id=call.message.message_id)
         await state.clear()
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
@@ -51,7 +51,7 @@ async def name_question_edit_take_answer_from_button(call: CallbackQuery, state:
 async def name_question_edit_take_answer_from_message(message: Message, state: FSMContext):
     try:
         await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
-        await func_for_send_prof(user_id=message.from_user.id)
+        await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
         await state.clear()
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
@@ -98,7 +98,7 @@ async def edit_location_write_take_answer(call: CallbackQuery, state: FSMContext
                                  federal_district=city.federal_district, region_type=city.region_type,
                                  region=city.region, area_type=city.area_type, area=city.area,
                                  city_type=city.city_type, city=city.city)
-            await func_for_send_prof(user_id=call.from_user.id)
+            await func_for_send_prof(user_id=call.from_user.id, message_id=call.message.message_id)
             await state.clear()
         except Exception as exc:
             logger.error(f'Error updating user location: {exc}')
@@ -122,18 +122,17 @@ async def edit_location_share_take_answer(message: Message, state: FSMContext):
                                          federal_district=city.federal_district, region_type=city.region_type,
                                          region=city.region, area_type=city.area_type, area=city.area,
                                          city_type=city.city_type, city=city.city)
-                await func_for_send_prof(message.from_user.id)
+                await func_for_send_prof(message.from_user.id, message.message_id)
                 await state.clear()
             except Exception as exc:
                 logger.error(f'Error updating user location: {exc}')
             break
+    if location:
+        ...
     else:
-        if location:
-            ...
-        else:
-            replica = await db.get_row(BotReplicas, unique_name='location_false')
-            await message.delete(chat_id=message.from_user.id, message_id=message.message_id - 1)
-            await message.answer(replica.replica, reply_markup=create_location_buttons())
+        replica = await db.get_row(BotReplicas, unique_name='location_false')
+        await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
+        await message.answer(replica.replica, reply_markup=create_location_buttons())
 
 @edit_profile_router.message(States.description_question_edit)
 async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
@@ -141,7 +140,7 @@ async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
     if description:
         try:
             await db.update_user_row(model=Users, tg_user_id=message.from_user.id, about_yourself=description)
-            await func_for_send_prof(user_id=message.from_user.id)
+            await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
             await state.clear()
         except Exception as exc:
             logger.error(f'Error updating user description: {exc}')
@@ -151,6 +150,8 @@ async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
 
 @edit_profile_router.callback_query(F.data == 'add_media')
 async def add_new_media(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    temp_storage.id_message = call.message.message_id
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     list_media = json.loads(user_data.media).get('media')
     if len(list_media) == 5:
@@ -181,14 +182,14 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
-                await func_for_send_prof(user_id=message.from_user.id)
+                await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                 await state.clear()
             else:
                 file_id = message.photo[-1].file_id
                 list_media.insert(0, [content_type, file_id])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                          media=json.dumps({'media': list_media}))
-                await func_for_send_prof(user_id=message.from_user.id)
+                await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                 await state.clear()
     elif message.video:
         content_type = 'video'
@@ -206,14 +207,14 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                     await message.answer(replica.replica.replace('|n', '\n'))
-                    await func_for_send_prof(user_id=message.from_user.id)
+                    await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                     await state.clear()
                 else:
                     file_id = message.video.file_id
                     list_media.insert(0, [content_type, file_id])
                     await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                              media=json.dumps({'media': list_media}))
-                    await func_for_send_prof(user_id=message.from_user.id)
+                    await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                     await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
@@ -228,12 +229,14 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
 
 @edit_profile_router.callback_query(F.data == 'cancel')
 async def cancel(call: CallbackQuery, state: FSMContext):
-    await func_for_send_prof(user_id=call.from_user.id)
+    await func_for_send_prof(user_id=call.from_user.id, message_id=call.message.message_id)
     await state.clear()
 
 
 @edit_profile_router.callback_query(F.data == 'delete')
 async def delete_media_question(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    temp_storage.id_message = call.message.message_id
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if len(json.loads(user.media).get('media')) > 1:
         replica = await db.get_row(BotReplicas, unique_name='delete_question')
@@ -255,7 +258,7 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
         await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({'media': user_media}))
         replica = await db.get_row(BotReplicas, unique_name='delete_complete')
         await call.message.answer(replica.replica)
-        await func_for_send_prof(user_id=call.from_user.id)
+        await func_for_send_prof(user_id=call.from_user.id, message_id=call.message.message_id)
         await state.clear()
     except Exception as exc:
         logger.error(f'Update user media failed {exc}')
@@ -278,14 +281,14 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'))
-                await func_for_send_prof(user_id=message.from_user.id)
+                await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                 await state.clear()
             else:
                 file_id = message.photo[-1].file_id
                 list_media.insert(0, [content_type, file_id])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                          media=json.dumps({'media': list_media}))
-                await func_for_send_prof(user_id=message.from_user.id)
+                await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                 await state.clear()
     elif message.video:
         content_type = 'video'
@@ -303,14 +306,14 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                     await message.answer(replica.replica.replace('|n', '\n'))
-                    await func_for_send_prof(user_id=message.from_user.id)
+                    await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                     await state.clear()
                 else:
                     file_id = message.video.file_id
                     list_media.insert(0, [content_type, file_id])
                     await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                              media=json.dumps({'media': list_media}))
-                    await func_for_send_prof(user_id=message.from_user.id)
+                    await func_for_send_prof(user_id=message.from_user.id, message_id=message.message_id)
                     await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
