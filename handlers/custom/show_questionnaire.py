@@ -1,4 +1,6 @@
-from aiogram import Router
+from typing import Any
+
+from aiogram import Router, F
 import json
 from aiogram.filters.command import Command
 from aiogram.types import Message

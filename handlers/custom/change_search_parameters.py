@@ -27,7 +27,8 @@ async def change_age_range(call: CallbackQuery, state: FSMContext):
     await state.set_state(States.edit_age_range_search)
 
 
-@change_search_parameters_router.message(States.edit_age_range_search)
+@change_search_parameters_router.message(States.edit_age_range_search, F.text,
+                                         ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def change_age_range_take_answer(message: Message, state: FSMContext):
     if message.text:
         pattern = r'^\d{2}-\d{2}$'

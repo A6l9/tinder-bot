@@ -37,7 +37,8 @@ async def start_completion(call: CallbackQuery, state: FSMContext):
     replica = await db.get_row(BotReplicas, unique_name='age_question')
     await call.message.edit_text(replica.replica)
 
-@profile_router.message(States.age_question)
+@profile_router.message(~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}), States.age_question,
+                        F.text)
 async def age_question_take_answer(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
     try:
@@ -106,7 +107,8 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
             logger.error(f'Error take user location: {exc}')
 
 
-@profile_router.message(States.location_write)
+@profile_router.message(States.location_write, ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}),
+                        F.text)
 async def location_write_search_city(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
     try:
@@ -212,7 +214,8 @@ async def name_question_take_answer_from_button(call: CallbackQuery, state: FSMC
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
 
-@profile_router.message(States.name_question)
+@profile_router.message(States.name_question, ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}),
+                        F.text)
 async def name_question_take_answer_from_message(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
     try:
@@ -239,7 +242,8 @@ async def about_yourself_skip(call: CallbackQuery, state: FSMContext):
     await call.message.answer(replica.replica.replace('|n', '\n'))
     await state.set_state(States.send_video_or_photo)
 
-@profile_router.message(States.about_yourself)
+@profile_router.message(States.about_yourself, F.text,
+                        ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def about_yourself_get_answer(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
     try:

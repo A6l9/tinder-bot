@@ -1,4 +1,6 @@
-from aiogram import Router
+from typing import Any
+
+from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from loader import db, user_manager, bot

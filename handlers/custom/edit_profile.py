@@ -9,8 +9,7 @@ from storage.states import States
 from loader import db, bot, user_manager
 from database.models import BotReplicas, Users, Cities
 from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
-    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_location_buttons, \
-    create_sex_edit_buttons
+    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_sex_edit_buttons
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
 from utils.haversine import haversine
@@ -55,7 +54,8 @@ async def sex_question_take_answer(call: CallbackQuery):
         logger.error(f'Error updating user sex: {exc}')
 
 
-@edit_profile_router.message(States.edit_age_question)
+@edit_profile_router.message(States.edit_age_question, F.text,
+                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def age_question_take_answer(message: Message, state: FSMContext):
     if message.text.isdigit() and 16 <= int(message.text) < 46:
         try:
@@ -78,7 +78,8 @@ async def name_question_edit_take_answer_from_button(call: CallbackQuery, state:
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
 
-@edit_profile_router.message(States.name_question_edit)
+@edit_profile_router.message(States.name_question_edit, F.text,
+                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def name_question_edit_take_answer_from_message(message: Message, state: FSMContext):
     try:
         await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
@@ -106,7 +107,8 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
             logger.error(f'Error take user location: {exc}')
 
 
-@edit_profile_router.message(States.location_edit_write)
+@edit_profile_router.message(States.location_edit_write, F.text,
+                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def location_write_search_city(message: Message, state: FSMContext):
     cities_matches = await db.search_cities(str(message.text))
     if cities_matches:
@@ -163,9 +165,10 @@ async def edit_location_share_take_answer(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='location_false')
         await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
-        await message.answer(replica.replica, reply_markup=create_location_buttons())
+        await message.answer(replica.replica, reply_markup=create_location_edit_buttons())
 
-@edit_profile_router.message(States.description_question_edit)
+@edit_profile_router.message(States.description_question_edit, F.text,
+                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
     description = message.text
     if description:
