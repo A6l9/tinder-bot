@@ -8,7 +8,8 @@ async def set_commands():
     :return:
     """
     commands = [BotCommand(command='start', description='Начать поиск'),
-                BotCommand(command='show_my_profile', description='Показать мой профиль')
+                BotCommand(command='show_my_profile', description='Показать мой профиль'),
+                BotCommand(command='change_search_parameters', description='Изменить параметры поиска')
                 ]
 
     await bot.set_my_commands(commands, BotCommandScopeDefault())

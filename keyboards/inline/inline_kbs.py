@@ -1,10 +1,12 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 from keyboards.buttons import start_button, sex_buttons, \
     preference_buttons, location_buttons, skip_button, edit_button, edit_points_buttons, \
     location_edit_buttons, pagination_buttons, pagination_buttons_start, \
     pagination_buttons_middle, pagination_buttons_end, cancel_button, delete_or_no_button, \
-    add_or_no_buttons, show_my_profile_if_limit_photo_button
+    add_or_no_buttons, show_my_profile_if_limit_photo_button, sex_buttons_edit, cancel_search_button, \
+    change_search_parameters_buttons, search_preference_buttons
 from loader import db
 from database.models import Users
 import json
@@ -23,6 +25,12 @@ def create_sex_buttons():
 
     return builder.as_markup()
 
+def create_sex_edit_buttons():
+    builder = InlineKeyboardBuilder()
+    builder.row(*sex_buttons_edit, *cancel_button)
+    builder.adjust(2)
+    return builder.as_markup()
+
 def create_preference_buttons():
     builder = InlineKeyboardBuilder()
     builder.row(*preference_buttons)
@@ -32,17 +40,26 @@ def create_preference_buttons():
 def create_location_buttons():
     builder = InlineKeyboardBuilder()
     builder.row(*location_buttons)
-
+    builder.adjust(1)
     return builder.as_markup()
 
-def create_name_question(username):
-    inline_kb_list = [
-        [InlineKeyboardButton(
-        text='{name}'.format(name=username),
-        callback_data='name_button'
-    )]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+def create_name_question(username, flag=None):
+    if flag == 'first_name':
+        inline_kb_list = [
+            [InlineKeyboardButton(
+            text='{name}'.format(name=username),
+            callback_data='name_firstname_button'
+        )]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+    elif flag == 'username':
+        inline_kb_list = [
+            [InlineKeyboardButton(
+                text='{name}'.format(name=username),
+                callback_data='name_username_button'
+            )]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
 def create_buttons_cities(list_cities):
@@ -93,7 +110,7 @@ async def create_points_buttons(user_id):
 def create_location_edit_buttons():
     builder = InlineKeyboardBuilder()
     builder.row(*location_edit_buttons, *cancel_button)
-
+    builder.adjust(1)
     return builder.as_markup()
 
 def create_buttons_cities_edit(list_cities):
@@ -140,3 +157,15 @@ def create_goto_profile_if_limit_photo_button():
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def create_change_search_buttons():
+    builder = InlineKeyboardBuilder()
+    builder.row(*change_search_parameters_buttons)
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_search_preference_buttons():
+    builder = InlineKeyboardBuilder()
+    builder.row(*search_preference_buttons, *cancel_search_button)
+    builder.adjust(1)
+    return builder.as_markup()

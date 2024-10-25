@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardButton
 
+
 start_button = (InlineKeyboardButton(
     text='👌Давай начнем',
     callback_data='start_completion'
@@ -14,6 +15,17 @@ sex_buttons = (
     InlineKeyboardButton(
     text='Я девушка',
     callback_data='sex_woman'
+    ),
+)
+
+sex_buttons_edit = (
+    InlineKeyboardButton(
+    text='Я парень',
+    callback_data='editsex_man'
+    ),
+    InlineKeyboardButton(
+    text='Я девушка',
+    callback_data='editsex_woman'
     ),
 )
 
@@ -112,13 +124,21 @@ edit_points_buttons = (
         callback_data='edit_name'
     ),
     InlineKeyboardButton(
+        text='Сменить пол',
+        callback_data='edit_sex'
+    ),
+    InlineKeyboardButton(
+        text='Изменить возраст',
+        callback_data='edit_age'
+    ),
+    InlineKeyboardButton(
         text='Изменить город',
         callback_data='edit_city'
     ),
     InlineKeyboardButton(
         text='Изменить описание',
         callback_data='edit_description'
-    )
+    ),
 )
 
 location_edit_buttons = (
@@ -165,3 +185,35 @@ show_my_profile_if_limit_photo_button = (
     ),
 )
 
+change_search_parameters_buttons = (
+    InlineKeyboardButton(
+        text='Изменить диапазон возраста',
+        callback_data='change_age_range'
+    ),
+    InlineKeyboardButton(
+        text='Изменить предпочтение',
+        callback_data='change_sex_preference'
+    ),
+)
+
+cancel_search_button = (
+    InlineKeyboardButton(
+        text='❌Отмена',
+        callback_data='search_cancel'
+    ),
+)
+
+search_preference_buttons = (
+    InlineKeyboardButton(
+    text='Парней',
+    callback_data='search_preference_man'
+    ),
+    InlineKeyboardButton(
+    text='Девушек',
+    callback_data='search_preference_woman'
+    ),
+    InlineKeyboardButton(
+    text='Все равно',
+    callback_data='search_preference_no'
+    )
+)

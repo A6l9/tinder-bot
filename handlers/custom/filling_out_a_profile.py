@@ -13,7 +13,7 @@ from database.models import BotReplicas, Users, Cities
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_buttons, create_location_buttons,
                                          create_name_question, create_buttons_cities, create_skip_button, \
-                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button,
+                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button
                                          )
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
@@ -44,17 +44,18 @@ async def age_question_take_answer(message: Message, state: FSMContext):
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:
         ...
-    if message.text.isdigit() and 10 <= int(message.text) < 100:
-        try:
-            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=str(message.text))
-            replica = await db.get_row(BotReplicas, unique_name='sex_question')
-            await message.answer(replica.replica, reply_markup=create_sex_buttons())
-            await state.clear()
-        except Exception as exc:
-            logger.error(f'Error updating user age: {exc}')
-    else:
-        replica = await db.get_row(BotReplicas, unique_name='wrong_age')
-        await message.answer(replica.replica)
+    if message.text:
+        if message.text.isdigit() and 16 <= int(message.text) < 46:
+            try:
+                await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=str(message.text))
+                replica = await db.get_row(BotReplicas, unique_name='sex_question')
+                await message.answer(replica.replica, reply_markup=create_sex_buttons())
+                await state.clear()
+            except Exception as exc:
+                logger.error(f'Error updating user age: {exc}')
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='wrong_age')
+            await message.answer(replica.replica)
 
 @profile_router.callback_query(F.data.startswith('sex_'))
 async def sex_question_take_answer(call: CallbackQuery):
@@ -139,7 +140,12 @@ async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
                                  region=city.region, area_type=city.area_type, area=city.area,
                                  city_type=city.city_type, city=city.city)
             replica = await db.get_row(BotReplicas, unique_name='name_question')
-            await call.message.answer(replica.replica, reply_markup=create_name_question(call.from_user.username))
+            if call.from_user.first_name:
+                await call.message.answer(replica.replica, reply_markup=create_name_question(call.from_user.first_name,
+                                                                                             flag='first_name'))
+            elif call.from_user.username:
+                await call.message.answer(replica.replica, reply_markup=create_name_question(call.from_user.username,
+                                                                                             flag='username'))
             await state.set_state(States.name_question)
         except Exception as exc:
             logger.error(f'Error updating user location: {exc}')
@@ -164,7 +170,14 @@ async def location_share_take_answer(message: Message, state: FSMContext):
                                          region=city.region, area_type=city.area_type, area=city.area,
                                          city_type=city.city_type, city=city.city)
                 replica = await db.get_row(BotReplicas, unique_name='name_question')
-                await message.answer(replica.replica, reply_markup=create_name_question(message.from_user.username))
+                if message.from_user.first_name:
+                    await message.answer(replica.replica,
+                                              reply_markup=create_name_question(message.from_user.first_name,
+                                                                                flag='first_name'))
+                elif message.from_user.username:
+                    await message.answer(replica.replica,
+                                              reply_markup=create_name_question(message.from_user.username,
+                                                                                flag='username'))
                 await state.set_state(States.name_question)
             except Exception as exc:
                 logger.error(f'Error updating user location: {exc}')
@@ -183,12 +196,16 @@ async def location_share_take_answer(message: Message, state: FSMContext):
 @profile_router.callback_query(F.data.startswith('name_'))
 async def name_question_take_answer_from_button(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
+    type_name = call.data.split('_')[1]
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
     except:
         ...
     try:
-        await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
+        if type_name == 'username':
+            await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
+        elif type_name == 'firstname':
+            await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.first_name)
         replica = await db.get_row(BotReplicas, unique_name='about_yourself')
         await call.message.answer(replica.replica, reply_markup=create_skip_button())
         await state.set_state(States.about_yourself)

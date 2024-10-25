@@ -23,9 +23,15 @@ async def move_left(call: CallbackQuery):
         else:
             description = 'Нет описания'
         if content[temp_storage.num_elem][0] == 'photo':
+            sex = None
+            if user_data.sex == 'man':
+                sex = 'Парень'
+            elif user_data.sex == 'woman':
+                sex = 'Девушка'
             media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                                              name=user_data.username,
+                                                             sex=sex,
                                                              age=user_data.age,
                                                              city=user_data.city,
                                                              desc=description))
@@ -37,10 +43,16 @@ async def move_left(call: CallbackQuery):
                 description = user_data.about_yourself
             else:
                 description = 'Нет описания'
+            sex = None
+            if user_data.sex == 'man':
+                sex = 'Парень'
+            elif user_data.sex == 'woman':
+                sex = 'Девушка'
             media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,
                                              age=user_data.age,
+                                             sex=sex,
                                              city=user_data.city,
                                              desc=description))
             await bot.edit_message_media(chat_id=call.from_user.id,
@@ -65,9 +77,15 @@ async def move_right(call: CallbackQuery):
         else:
             description = 'Нет описания'
         if content[temp_storage.num_elem][0] == 'photo':
+            sex = None
+            if user_data.sex == 'man':
+                sex = 'Парень'
+            elif user_data.sex == 'woman':
+                sex = 'Девушка'
             media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,
+                                             sex=sex,
                                              age=user_data.age,
                                              city=user_data.city,
                                              desc=description))
@@ -79,9 +97,15 @@ async def move_right(call: CallbackQuery):
                 description = user_data.about_yourself
             else:
                 description = 'Нет описания'
+            sex = None
+            if user_data.sex == 'man':
+                sex = 'Парень'
+            elif user_data.sex == 'woman':
+                sex = 'Девушка'
             media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,
+                                             sex=sex,
                                              age=user_data.age,
                                              city=user_data.city,
                                              desc=description))

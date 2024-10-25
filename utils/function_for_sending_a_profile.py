@@ -22,10 +22,16 @@ async def func_for_send_prof(user_id, message):
         else:
             description = 'Нет описания'
         if content[0][0] == 'photo':
+            sex = None
+            if user.sex == 'man':
+                sex = 'Парень'
+            elif user.sex == 'woman':
+                sex = 'Девушка'
             await bot.send_photo(chat_id=user_id,
                                  photo=content[0][1], caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
                     age=user.age,
+                    sex=sex,
                     city=user.city,
                     desc=description),
                                  reply_markup=await create_points_buttons(user_id))
@@ -34,9 +40,15 @@ async def func_for_send_prof(user_id, message):
                 description = user.about_yourself
             else:
                 description = 'Нет описания'
+            sex = None
+            if user.sex == 'man':
+                sex = 'Парень'
+            elif user.sex == 'woman':
+                sex = 'Девушка'
             await bot.send_video(chat_id=user_id,
                                  video=content[0][1], caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
+                    sex=sex,
                     age=user.age,
                     city=user.city,
                     desc=description),

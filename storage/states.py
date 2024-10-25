@@ -18,3 +18,6 @@ class States(StatesGroup):
     delete_media = State()
     send_media_before_delete = State()
     add_or_no_media = State()
+    edit_age_question = State()
+    edit_age_range_search = State()
+    edit_preference_search = State()

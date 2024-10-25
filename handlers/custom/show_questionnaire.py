@@ -19,10 +19,6 @@ async def show_questionnaire(message: Message):
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if user_data and user_data.done_questionnaire:
-        try:
-            await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-        except:
-            ...
         if json.loads(user_data.media).get('media'):
             content = json.loads(user_data.media).get('media')
             if user_data.about_yourself:
@@ -30,11 +26,17 @@ async def show_questionnaire(message: Message):
             else:
                 description = 'Нет описания'
             if content[temp_storage.num_elem][0] == 'photo':
+                sex = None
+                if user_data.sex == 'man':
+                    sex = 'Парень'
+                elif user_data.sex == 'woman':
+                    sex = 'Девушка'
                 await bot.send_photo(chat_id=message.from_user.id,
                                 photo=content[temp_storage.num_elem][1], caption=replica.replica.replace('|n',
                                                                                                          '\n').format(
                                                                  name=user_data.username,
                                                                  age=user_data.age,
+                                                                 sex=sex,
                                                                  city=user_data.city,
                                                                  desc=description),
                                                                  reply_markup=await create_points_buttons(
@@ -54,6 +56,10 @@ async def show_questionnaire(message: Message):
                                                                     reply_markup=await create_points_buttons(
                                                                         message.from_user.id))
     else:
-        temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await message.answer(replica.replica, reply_markup=create_start_button())
+
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...

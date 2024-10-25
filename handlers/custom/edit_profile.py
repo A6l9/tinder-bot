@@ -9,7 +9,8 @@ from storage.states import States
 from loader import db, bot, user_manager
 from database.models import BotReplicas, Users, Cities
 from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
-    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_location_buttons
+    create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_location_buttons, \
+    create_sex_edit_buttons
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
 from utils.haversine import haversine
@@ -35,11 +36,41 @@ async def change_distributor(call: CallbackQuery, state: FSMContext):
         replica = await db.get_row(BotReplicas, unique_name='write_new_description')
         await call.message.answer(replica.replica, reply_markup=create_cancel_button())
         await state.set_state(States.description_question_edit)
+    elif point == 'sex':
+        replica = await db.get_row(BotReplicas, unique_name='sex_question')
+        await call.message.answer(replica.replica, reply_markup=create_sex_edit_buttons())
+    elif point == 'age':
+        await state.set_state(States.edit_age_question)
+        replica = await db.get_row(BotReplicas, unique_name='age_question')
+        await call.message.answer(replica.replica, reply_markup=create_cancel_button())
+
+
+@edit_profile_router.callback_query(F.data.startswith('editsex_'))
+async def sex_question_take_answer(call: CallbackQuery):
+    sex = call.data.split('_')[1]
+    try:
+        await db.update_user_row(model=Users, tg_user_id=call.from_user.id, sex=sex)
+        await func_for_send_prof(user_id=call.from_user.id, message=call.message)
+    except Exception as exc:
+        logger.error(f'Error updating user sex: {exc}')
+
+
+@edit_profile_router.message(States.edit_age_question)
+async def age_question_take_answer(message: Message, state: FSMContext):
+    if message.text.isdigit() and 16 <= int(message.text) < 46:
+        try:
+            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=str(message.text))
+            await func_for_send_prof(user_id=message.from_user.id, message=message)
+            await state.clear()
+        except Exception as exc:
+            logger.error(f'Error updating user age: {exc}')
+    else:
+        replica = await db.get_row(BotReplicas, unique_name='wrong_age')
+        await message.answer(replica.replica, reply_markup=create_cancel_button())
 
 
 @edit_profile_router.callback_query(F.data.startswith('editname_'))
 async def name_question_edit_take_answer_from_button(call: CallbackQuery, state: FSMContext):
-
     try:
         await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
         await func_for_send_prof(user_id=call.from_user.id, message=call.message)
@@ -285,7 +316,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 await state.clear()
             else:
                 file_id = message.photo[-1].file_id
-                list_media.insert(0, [content_type, file_id])
+                list_media[0] = [content_type, file_id]
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                          media=json.dumps({'media': list_media}))
                 await func_for_send_prof(user_id=message.from_user.id, message=message)
@@ -310,7 +341,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                     await state.clear()
                 else:
                     file_id = message.video.file_id
-                    list_media.insert(0, [content_type, file_id])
+                    list_media[0] = [content_type, file_id]
                     await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
                                              media=json.dumps({'media': list_media}))
                     await func_for_send_prof(user_id=message.from_user.id, message=message)
@@ -324,3 +355,5 @@ async def send_media_before_delete(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
+
+
