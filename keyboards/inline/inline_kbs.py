@@ -6,7 +6,9 @@ from keyboards.buttons import start_button, sex_buttons, \
     location_edit_buttons, pagination_buttons, pagination_buttons_start, \
     pagination_buttons_middle, pagination_buttons_end, cancel_button, delete_or_no_button, \
     add_or_no_buttons, show_my_profile_if_limit_photo_button, sex_buttons_edit, cancel_search_button, \
-    change_search_parameters_buttons, search_preference_buttons
+    change_search_parameters_buttons, search_preference_buttons, pagination_questionnaire_buttons, \
+    pagination_questionnaire_buttons_start, pagination_questionnaire_buttons_middle, \
+    pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons
 from loader import db
 from database.models import Users
 import json
@@ -168,4 +170,34 @@ def create_search_preference_buttons():
     builder = InlineKeyboardBuilder()
     builder.row(*search_preference_buttons, *cancel_search_button)
     builder.adjust(1)
+    return builder.as_markup()
+
+async def create_buttons_for_viewing_profiles(user_id, another_user_id):
+    temp_storage = user_manager.get_user(user_id)
+    another_user = await db.get_row(Users, tg_user_id=str(another_user_id))
+    temp_storage.another_photo_storage = json.loads(another_user.media).get('media')
+    builder = InlineKeyboardBuilder()
+    if len(temp_storage.another_photo_storage) == 1:
+        builder.row(*pagination_questionnaire_buttons)
+    elif temp_storage.num_page_photo_for_another_user == 0:
+        builder.row(*pagination_questionnaire_buttons_start)
+    elif temp_storage.num_page_photo_for_another_user == len(temp_storage.another_photo_storage) - 1:
+        builder.row(*pagination_questionnaire_buttons_end)
+    elif 0 < temp_storage.num_page_photo_for_another_user < len(temp_storage.another_photo_storage) - 1:
+        builder.row(*pagination_questionnaire_buttons_middle)
+    return builder.as_markup()
+
+async def create_buttons_for_viewing_match(user_id, another_user_id):
+    temp_storage = user_manager.get_user(user_id)
+    another_user = await db.get_row(Users, tg_user_id=str(another_user_id))
+    temp_storage.another_photo_storage = json.loads(another_user.media).get('media')
+    builder = InlineKeyboardBuilder()
+    if len(temp_storage.another_photo_storage) == 1:
+        builder.row(*pagination_questionnaire_match_buttons)
+    elif temp_storage.num_page_photo_for_another_user == 0:
+        builder.row(*pagination_questionnaire_match_buttons)
+    elif temp_storage.num_page_photo_for_another_user == len(temp_storage.another_photo_storage) - 1:
+        builder.row(*pagination_questionnaire_match_buttons)
+    elif 0 < temp_storage.num_page_photo_for_another_user < len(temp_storage.another_photo_storage) - 1:
+        builder.row(*pagination_questionnaire_match_buttons)
     return builder.as_markup()

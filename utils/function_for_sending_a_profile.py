@@ -9,10 +9,6 @@ from utils.clear_back import clear_back
 async def func_for_send_prof(user_id, message):
     temp_storage = user_manager.get_user(user_id)
     temp_storage.num_elem = 0
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     user = await db.get_row(Users, tg_user_id=str(user_id))
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if json.loads(user.media).get('media'):
@@ -24,9 +20,9 @@ async def func_for_send_prof(user_id, message):
         if content[0][0] == 'photo':
             sex = None
             if user.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             await bot.send_photo(chat_id=user_id,
                                  photo=content[0][1], caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
@@ -42,9 +38,9 @@ async def func_for_send_prof(user_id, message):
                 description = 'Нет описания'
             sex = None
             if user.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             await bot.send_video(chat_id=user_id,
                                  video=content[0][1], caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
@@ -53,3 +49,7 @@ async def func_for_send_prof(user_id, message):
                     city=user.city,
                     desc=description),
                                  reply_markup=await create_points_buttons(user_id))
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...

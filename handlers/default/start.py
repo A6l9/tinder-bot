@@ -1,13 +1,12 @@
-from typing import Any
 
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from loader import db, user_manager, bot
 from loguru import logger
 from database.models import Users, BotReplicas
 from keyboards.inline.inline_kbs import create_start_button
-from utils.function_for_sending_a_profile import func_for_send_prof
+from utils.function_for_sending_questionnairies import send_questionnaire_first_time
 from utils.clear_back import clear_back
 
 start_router = Router()
@@ -30,12 +29,13 @@ async def start(message: Message):
             logger.error(exc)
             await message.answer('Произошла ошибка, попробуйте еще раз!')
     else:
-        if user.done_questionnaire:
-            temp_storage.start_message = message
-            await func_for_send_prof(message.from_user.id, message=message)
-        else:
-            replica = await db.get_row(BotReplicas, unique_name='start_message')
-            await message.answer(replica.replica, reply_markup=create_start_button())
+        # if user.done_questionnaire:
+        #     temp_storage.start_message = message
+        #     await func_for_send_prof(message.from_user.id, message=message)
+        # else:
+        #     replica = await db.get_row(BotReplicas, unique_name='start_message')
+        #     await message.answer(replica.replica, reply_markup=create_start_button())
+        await send_questionnaire_first_time(message)
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:

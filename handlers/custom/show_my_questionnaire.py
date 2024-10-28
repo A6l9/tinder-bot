@@ -1,13 +1,13 @@
-from typing import Any
-
-from aiogram import Router, F
 import json
+
+from aiogram import Router
 from aiogram.filters.command import Command
 from aiogram.types import Message
-from loader import db, bot, user_manager
-from database.models import Users, BotReplicas
 from loguru import logger
+
+from database.models import Users, BotReplicas
 from keyboards.inline.inline_kbs import create_points_buttons, create_start_button
+from loader import db, bot, user_manager
 from utils.clear_back import clear_back
 
 show_router = Router()
@@ -30,9 +30,9 @@ async def show_questionnaire(message: Message):
             if content[temp_storage.num_elem][0] == 'photo':
                 sex = None
                 if user_data.sex == 'man':
-                    sex = 'Парень'
+                    sex = 'Мужской'
                 elif user_data.sex == 'woman':
-                    sex = 'Девушка'
+                    sex = 'Женский'
                 await bot.send_photo(chat_id=message.from_user.id,
                                 photo=content[temp_storage.num_elem][1], caption=replica.replica.replace('|n',
                                                                                                          '\n').format(

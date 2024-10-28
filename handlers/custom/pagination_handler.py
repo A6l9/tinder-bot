@@ -25,9 +25,9 @@ async def move_left(call: CallbackQuery):
         if content[temp_storage.num_elem][0] == 'photo':
             sex = None
             if user_data.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user_data.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                                              name=user_data.username,
@@ -45,9 +45,9 @@ async def move_left(call: CallbackQuery):
                 description = 'Нет описания'
             sex = None
             if user_data.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user_data.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,
@@ -79,9 +79,9 @@ async def move_right(call: CallbackQuery):
         if content[temp_storage.num_elem][0] == 'photo':
             sex = None
             if user_data.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user_data.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             media_type = InputMediaPhoto(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,
@@ -99,9 +99,9 @@ async def move_right(call: CallbackQuery):
                 description = 'Нет описания'
             sex = None
             if user_data.sex == 'man':
-                sex = 'Парень'
+                sex = 'Мужской'
             elif user_data.sex == 'woman':
-                sex = 'Девушка'
+                sex = 'Женский'
             media_type = InputMediaVideo(media=content[temp_storage.num_elem][1],
                                          caption=replica.replica.replace('|n', '\n').format(
                                              name=user_data.username,

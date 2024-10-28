@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.ddl import DropTable
 from typing_extensions import Any
-from database.models import Users, Cities
+from database.models import Users, Cities, Matches
 from database.database import Base
 
 class BaseInterface:
@@ -164,6 +164,25 @@ class BaseInterface:
                 print(ex)
                 print(f'failed update {model.__tablename__}')
 
+    async def update_matches_row(self, model, tg_user_id, tg_user_id_another_user,
+                                 user_id_one=None, user_id_two=None, **kwargs):
+
+        async with self.async_ses() as session:
+            # async with self.locks.get(model, asyncio.Lock()):
+            if user_id_one:
+                row = await session.execute(update(Matches).where(Matches.user_id_one == str(
+                    tg_user_id), Matches.user_id_two == str(tg_user_id_another_user)).values(**kwargs))
+            elif user_id_two:
+                row = await session.execute(update(Matches).where(
+                    Matches.user_id_one == str(tg_user_id_another_user), Matches.user_id_two == str(
+                    tg_user_id)).values(**kwargs))
+            try:
+                await session.commit()
+                # return row.scalar()
+            except Exception as ex:
+                print(ex)
+                print(f'failed update {model.__tablename__}')
+
     async def get_user_tags(self, model: Any=Users, to_many=False, order_by='id', filter=None, **kwargs):
         """
         Метод принимает класс модели и имена полей со значениями,
@@ -221,7 +240,7 @@ class BaseInterface:
 
     async def search_cities(self, fragment: str):
         async with self.async_ses() as session:
-            query = select(Cities).where(Cities.city.ilike(f'%{fragment}%'))
+            query = select(Cities).where(Cities.city.ilike(f'{fragment}%'))
             result = await session.execute(query)
             cities = result.scalars().all()
             res = [*cities]

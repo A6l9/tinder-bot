@@ -41,10 +41,6 @@ async def start_completion(call: CallbackQuery, state: FSMContext):
                         F.text)
 async def age_question_take_answer(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     if message.text:
         if message.text.isdigit() and 16 <= int(message.text) < 46:
             try:
@@ -57,14 +53,14 @@ async def age_question_take_answer(message: Message, state: FSMContext):
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_age')
             await message.answer(replica.replica)
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 @profile_router.callback_query(F.data.startswith('sex_'))
 async def sex_question_take_answer(call: CallbackQuery):
     temp_storage = user_manager.get_user(call.from_user.id)
-    try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     sex = call.data.split('_')[1]
     try:
         await db.update_user_row(model=Users, tg_user_id=call.from_user.id, sex=sex)
@@ -72,14 +68,14 @@ async def sex_question_take_answer(call: CallbackQuery):
         await call.message.answer(replica.replica, reply_markup=create_preference_buttons())
     except Exception as exc:
         logger.error(f'Error updating user sex: {exc}')
-
-@profile_router.callback_query(F.data.startswith('preference_'))
-async def preference_question_take_answer(call: CallbackQuery):
-    temp_storage = user_manager.get_user(call.from_user.id)
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
     except:
         ...
+
+@profile_router.callback_query(F.data.startswith('preference_'))
+async def preference_question_take_answer(call: CallbackQuery):
+    temp_storage = user_manager.get_user(call.from_user.id)
     preference = call.data.split('_')[1]
     try:
         await db.update_user_row(model=Users, tg_user_id=call.from_user.id, preference=preference)
@@ -87,6 +83,10 @@ async def preference_question_take_answer(call: CallbackQuery):
         await call.message.answer(replica.replica, reply_markup=create_location_buttons())
     except Exception as exc:
         logger.error(f'Error updating user preference: {exc}')
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 @profile_router.callback_query(F.data.startswith('location_'))
 async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
@@ -111,10 +111,6 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
                         F.text)
 async def location_write_search_city(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     cities_matches = await db.search_cities(str(message.text))
     if cities_matches:
         replica = await db.get_row(BotReplicas, unique_name='city_choose')
@@ -123,15 +119,15 @@ async def location_write_search_city(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='city_not_found')
         await message.answer(replica.replica)
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 
 @profile_router.callback_query(F.data.startswith('city_'))
 async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
-    try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     city_code = call.data.split('_')[1]
     city = await db.get_row(Cities, postal_code=int(city_code))
     if city:
@@ -151,6 +147,11 @@ async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
             await state.set_state(States.name_question)
         except Exception as exc:
             logger.error(f'Error updating user location: {exc}')
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
+
 
 @profile_router.message(States.location_share, F.location)
 async def location_share_take_answer(message: Message, state: FSMContext):
@@ -200,10 +201,6 @@ async def name_question_take_answer_from_button(call: CallbackQuery, state: FSMC
     temp_storage = user_manager.get_user(call.from_user.id)
     type_name = call.data.split('_')[1]
     try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
-    try:
         if type_name == 'username':
             await db.update_user_row(model=Users, tg_user_id=call.from_user.id, username=call.from_user.username)
         elif type_name == 'firstname':
@@ -213,15 +210,15 @@ async def name_question_take_answer_from_button(call: CallbackQuery, state: FSMC
         await state.set_state(States.about_yourself)
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 @profile_router.message(States.name_question, ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}),
                         F.text)
 async def name_question_take_answer_from_message(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     try:
         await db.update_user_row(model=Users, tg_user_id=message.from_user.id, username=str(message.text))
         replica = await db.get_row(BotReplicas, unique_name='about_yourself')
@@ -229,27 +226,28 @@ async def name_question_take_answer_from_message(message: Message, state: FSMCon
         await state.set_state(States.about_yourself)
     except Exception as exc:
         logger.error(f'Error updating username: {exc}')
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 
 @profile_router.callback_query(F.data == 'skip')
 async def about_yourself_skip(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
+    replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
+    await call.message.answer(replica.replica.replace('|n', '\n'))
+    await state.set_state(States.send_video_or_photo)
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
     except:
         ...
-    replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
-    await call.message.answer(replica.replica.replace('|n', '\n'))
-    await state.set_state(States.send_video_or_photo)
+
 
 @profile_router.message(States.about_yourself, F.text,
                         ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def about_yourself_get_answer(message: Message, state: FSMContext):
     temp_storage = user_manager.get_user(message.from_user.id)
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     description = message.text
     if description:
         try:
@@ -262,14 +260,15 @@ async def about_yourself_get_answer(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='null_description')
         await message.answer(replica.replica)
-
-@profile_router.message(States.send_video_or_photo, F.content_type.in_({'photo', 'video', 'video_note'}))
-async def take_photo_or_video(message: Message, state: FSMContext):
-    temp_storage = user_manager.get_user(message.from_user.id)
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:
         ...
+
+
+@profile_router.message(States.send_video_or_photo, F.content_type.in_({'photo', 'video', 'video_note'}))
+async def take_photo_or_video(message: Message, state: FSMContext):
+    temp_storage = user_manager.get_user(message.from_user.id)
     storage = await state.get_data()
     if message.photo:
         content_type = 'photo'
@@ -329,15 +328,15 @@ async def take_photo_or_video(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica)
+    try:
+        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 
 @profile_router.callback_query(States.add_or_no_media, F.data == 'yes_more_media')
 async def yes_add_more_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
-    try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     list_media = json.loads(user_data.media).get('media')
     if len(list_media) == 5:
@@ -349,30 +348,34 @@ async def yes_add_more_media(call: CallbackQuery, state: FSMContext):
         replica = await db.get_row(BotReplicas, unique_name='send_video_or_photo')
         await call.message.answer(replica.replica.replace('|n', '\n'))
         await state.set_state(States.send_video_or_photo)
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 
 @profile_router.callback_query(States.add_or_no_media, F.data == 'no_more_media')
 async def no_more_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
-    try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
     await func_for_send_prof(call.from_user.id, call.message)
     await state.clear()
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
 
 
 @profile_router.callback_query(F.data == 'ok_goto_profile')
 async def goto_profile(call: CallbackQuery):
     temp_storage = user_manager.get_user(call.from_user.id)
-    try:
-        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
-        ...
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica)
     await func_for_send_prof(call.from_user.id, call.message)
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...

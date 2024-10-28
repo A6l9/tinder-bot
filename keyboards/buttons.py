@@ -217,3 +217,91 @@ search_preference_buttons = (
     callback_data='search_preference_no'
     )
 )
+
+
+pagination_questionnaire_buttons = (
+    InlineKeyboardButton(
+        text='👎',
+        callback_data='dislike'
+    ),
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='swipe_left',
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='swipe_right'
+    ),
+    InlineKeyboardButton(
+        text='👍',
+        callback_data='like'
+    ),
+)
+
+pagination_questionnaire_buttons_start = (
+    InlineKeyboardButton(
+        text='👎',
+        callback_data='dislike'
+    ),
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='swipe_left',
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='swipe_right'
+    ),
+    InlineKeyboardButton(
+        text='👍',
+        callback_data='like'
+    ),
+)
+
+pagination_questionnaire_buttons_middle = (
+    InlineKeyboardButton(
+        text='👎',
+        callback_data='dislike'
+    ),
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='swipe_left',
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='swipe_right'
+    ),
+    InlineKeyboardButton(
+        text='👍',
+        callback_data='like'
+    ),
+)
+
+pagination_questionnaire_buttons_end = (
+    InlineKeyboardButton(
+        text='👎',
+        callback_data='dislike'
+    ),
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='swipe_left',
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='swipe_right'
+    ),
+    InlineKeyboardButton(
+        text='👍',
+        callback_data='like'
+    ),
+)
+
+pagination_questionnaire_match_buttons = (
+    InlineKeyboardButton(
+        text='️️️️️◀️',
+        callback_data='swipe_left'
+    ),
+    InlineKeyboardButton(
+        text='▶️',
+        callback_data='swipe_right'
+    ),
+)

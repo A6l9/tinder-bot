@@ -68,3 +68,12 @@ class Cities(Base):
     city: Mapped[str] = mapped_column(String)
     geo_lat: Mapped[str] = mapped_column(String)
     geo_lon: Mapped[str] = mapped_column(String)
+
+
+class Matches(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id_one: Mapped[str] = mapped_column(String)
+    user_reaction_one: Mapped[Boolean] = mapped_column(Boolean, default=None, nullable=True)
+    user_id_two: Mapped[str] = mapped_column(String)
+    user_reaction_two: Mapped[Boolean] = mapped_column(Boolean, default=None, nullable=True)
+    is_send: Mapped[Boolean] = mapped_column(Boolean, default=False)
