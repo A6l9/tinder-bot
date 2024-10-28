@@ -15,19 +15,20 @@ async def send_questionnaire_first_time(message):
     user_data = await db.get_row(Users, tg_user_id=str(message.chat.id))
     if user_data and user_data.done_questionnaire and user_data.range_age:
         all_users = await db.get_row(Users, to_many=True)
-        matches = await db.get_row(Matches, to_many=True, is_send=False)
+        matches = await db.get_row(Matches, to_many=True)
         for i_user in all_users:
             for i_match in matches:
-                if (i_match.user_id_one == str(user_data.tg_user_id) and i_match.user_id_two == str(i_user.tg_user_id)
-                    and i_match.user_reaction_one is not None):
+                if (int(i_match.user_id_one) == int(user_data.tg_user_id)
+                    and int(i_match.user_id_two) == int(i_user.tg_user_id) and i_match.user_reaction_one is not None):
                     break
-                elif (i_match.user_id_one == str(i_user.tg_user_id)
-                    and i_match.user_id_two == str(user_data.tg_user_id) and i_match.user_reaction_two is not None):
+                elif (int(i_match.user_id_one) == int(i_user.tg_user_id)
+                      and int(i_match.user_id_two) == int(user_data.tg_user_id)
+                      and i_match.user_reaction_two is not None):
                     break
             else:
-                if (i_user.sex == user_data.preference and i_user.city == user_data.city
-                and int(user_data.range_age.split('-')[0]) <= int(i_user.age) <= int(user_data.range_age.split('-')[1])
-                        and i_user.tg_user_id != str(message.chat.id)):
+                if ((i_user.sex == user_data.preference or user_data.preference == 'no')
+                and i_user.city == user_data.city and int(user_data.range_age.split('-')[0]) <= int(i_user.age)
+                        <= int(user_data.range_age.split('-')[1]) and i_user.tg_user_id != str(message.chat.id)):
                     temp_storage.another_users_id.append(i_user.tg_user_id)
         if len(temp_storage.another_users_id) != 0:
             replica = await db.get_row(BotReplicas, unique_name='show_profile_another_user')
