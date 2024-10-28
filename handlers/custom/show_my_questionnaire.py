@@ -48,11 +48,17 @@ async def show_questionnaire(message: Message):
                     description = user_data.about_yourself
                 else:
                     description = 'Нет описания'
+                sex = None
+                if user_data.sex == 'man':
+                    sex = 'Мужской'
+                elif user_data.sex == 'woman':
+                    sex = 'Женский'
                 await bot.send_video(chat_id=message.from_user.id,
                                      video=content[temp_storage.num_elem][1],
                                      caption=replica.replica.replace('|n', '\n').format(
                                                                     name=user_data.username,
                                                                     age=user_data.age,
+                                                                    sex=sex,
                                                                     city=user_data.city,
                                                                     desc=description),
                                                                     reply_markup=await create_points_buttons(
