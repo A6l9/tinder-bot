@@ -34,8 +34,9 @@ async def show_questionnaire(message: Message):
                 elif user_data.sex == 'woman':
                     sex = 'Женский'
                 await bot.send_photo(chat_id=message.from_user.id,
-                                photo=content[temp_storage.num_elem][1], caption=replica.replica.replace('|n',
-                                                                                                         '\n').format(
+                                photo=content[temp_storage.num_elem][1],
+                                     protect_content=True,
+                                     caption=replica.replica.replace('|n', '\n').format(
                                                                  name=user_data.username,
                                                                  age=user_data.age,
                                                                  sex=sex,
@@ -55,6 +56,7 @@ async def show_questionnaire(message: Message):
                     sex = 'Женский'
                 await bot.send_video(chat_id=message.from_user.id,
                                      video=content[temp_storage.num_elem][1],
+                                     protect_content=True,
                                      caption=replica.replica.replace('|n', '\n').format(
                                                                     name=user_data.username,
                                                                     age=user_data.age,
@@ -65,7 +67,7 @@ async def show_questionnaire(message: Message):
                                                                         message.from_user.id))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
 
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)

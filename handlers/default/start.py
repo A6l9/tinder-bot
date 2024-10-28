@@ -24,10 +24,10 @@ async def start(message: Message):
             temp_storage.start_message = message
             await db.add_row(Users, tg_user_id=str(message.from_user.id))
             replica = await db.get_row(BotReplicas, unique_name='start_message')
-            await message.answer(replica.replica, reply_markup=create_start_button())
+            await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
         except Exception as exc:
             logger.error(exc)
-            await message.answer('Произошла ошибка, попробуйте еще раз!')
+            await message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
     else:
         # if user.done_questionnaire:
         #     temp_storage.start_message = message

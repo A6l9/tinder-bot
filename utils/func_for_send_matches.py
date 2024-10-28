@@ -45,7 +45,7 @@ class SendMatches:
                     logger.info('Send_task canceled')
                 self.task_storage[user.tg_user_id] = asyncio.create_task(self.send_for_user(user))
                 logger.info(f'Create task{self.task_storage}')
-            await asyncio.sleep(120)
+            await asyncio.sleep(60)
 
 
     async def send_for_user(self, user):
@@ -72,6 +72,9 @@ class SendMatches:
                                     another_user = await db.get_row(Users, tg_user_id=i_match.user_id_two)
                                     flag = 'two'
                                 content = json.loads(another_user.media).get('media')
+                                another_user_data = await bot.get_chat(int(another_user.tg_user_id))
+                                user_link =(f'<a href="tg://user?id={another_user_data.id}"'
+                                            f'>@{another_user_data.username}</a>')
                                 if content[0][0] == 'photo':
                                     if another_user.about_yourself:
                                         description = another_user.about_yourself
@@ -79,8 +82,10 @@ class SendMatches:
                                         description = 'Нет описания'
                                     msg = await bot.send_photo(chat_id=int(user.tg_user_id),
                                                          photo=content[0][1],
+                                                         protect_content=True,
                                                          caption=self.replica.replica.format(
                                                             name=another_user.username, age=another_user.age,
+                                                             link=user_link,
                                                             city=another_user.city, desc=description)
                                                          )
                                 elif content[0][0] == 'video':
@@ -90,8 +95,10 @@ class SendMatches:
                                         description = 'Нет описания'
                                     msg = await bot.send_video(chat_id=int(user.tg_user_id),
                                                          photo=content[0][1],
+                                                         protect_content=True,
                                                          caption=self.replica.replica.format(
                                                              name=another_user.username, age=another_user.age,
+                                                             link=user_link,
                                                              city=another_user.city, desc=description),
                                                          )
                                 logger.info(f' Message sent successfully for user {user.username} '

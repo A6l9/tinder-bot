@@ -22,12 +22,12 @@ async def func_for_send_search_parameters(message):
         await message.answer(replica.replica.format(
             sex=sex,
             age=range_age
-        ).replace('|n', '\n'),
+        ).replace('|n', '\n'), protect_content=True,
                              reply_markup=create_change_search_buttons())
     else:
         temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:

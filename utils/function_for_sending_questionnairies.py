@@ -13,7 +13,7 @@ async def send_questionnaire_first_time(message):
     temp_storage.num_page_photo_for_another_user = 0
     temp_storage.index_another_user = 0
     user_data = await db.get_row(Users, tg_user_id=str(message.chat.id))
-    if user_data and user_data.done_questionnaire:
+    if user_data and user_data.done_questionnaire and user_data.range_age:
         all_users = await db.get_row(Users, to_many=True)
         matches = await db.get_row(Matches, to_many=True, is_send=False)
         for i_user in all_users:
@@ -40,7 +40,9 @@ async def send_questionnaire_first_time(message):
             if content[0][0] == 'photo':
 
                 await bot.send_photo(chat_id=user_data.tg_user_id,
-                                     photo=content[0][1], caption=replica.replica.replace('|n', '\n').format(
+                                     photo=content[0][1],
+                                     protect_content=True,
+                                     caption=replica.replica.replace('|n', '\n').format(
                         name=another_user_data.username,
                         age=another_user_data.age,
                         city=another_user_data.city,
@@ -53,7 +55,9 @@ async def send_questionnaire_first_time(message):
                 else:
                     description = 'Нет описания'
                 await bot.send_video(chat_id=user_data.tg_user_id,
-                                     video=content[0][1], caption=replica.replica.replace('|n', '\n').format(
+                                     video=content[0][1],
+                                     protect_content=True,
+                                     caption=replica.replica.replace('|n', '\n').format(
                         name=another_user_data.username,
                         age=another_user_data.age,
                         city=another_user_data.city,
@@ -62,11 +66,14 @@ async def send_questionnaire_first_time(message):
                                          user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
-            await message.answer(replica.replica)
+            await message.answer(replica.replica, protect_content=True)
+    elif not user_data.range_age:
+        replica = await db.get_row(BotReplicas, unique_name='nodone_parameters')
+        await message.answer(replica.replica, protect_content=True)
     else:
         temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
 
 
 async def send_questionnaire(message):
@@ -111,8 +118,8 @@ async def send_questionnaire(message):
                                          user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
-            await message.answer(replica.replica)
+            await message.answer(replica.replica, protect_content=True)
     else:
         temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())

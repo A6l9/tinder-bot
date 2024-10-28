@@ -46,13 +46,13 @@ async def change_age_range_take_answer(message: Message, state: FSMContext):
                 await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_age_range')
-                await message.answer(replica.replica)
+                await message.answer(replica.replica, protect_content=True)
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_type_age_range')
-            await message.answer(replica.replica.replace('|n', '\n'))
+            await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type_age_range')
-        await message.answer(replica.replica.replace('|n', '\n'))
+        await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
 
 
 @change_search_parameters_router.callback_query(F.data == 'change_sex_preference')

@@ -24,7 +24,9 @@ async def func_for_send_prof(user_id, message):
             elif user.sex == 'woman':
                 sex = 'Женский'
             await bot.send_photo(chat_id=user_id,
-                                 photo=content[0][1], caption=replica.replica.replace('|n', '\n').format(
+                                 photo=content[0][1],
+                                 protect_content=True,
+                                 caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
                     age=user.age,
                     sex=sex,
@@ -42,7 +44,9 @@ async def func_for_send_prof(user_id, message):
             elif user.sex == 'woman':
                 sex = 'Женский'
             await bot.send_video(chat_id=user_id,
-                                 video=content[0][1], caption=replica.replica.replace('|n', '\n').format(
+                                 video=content[0][1],
+                                 protect_content=True,
+                                 caption=replica.replica.replace('|n', '\n').format(
                     name=user.username,
                     sex=sex,
                     age=user.age,

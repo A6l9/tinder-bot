@@ -16,7 +16,7 @@ class Users(Base):
     age: Mapped[str] = mapped_column(String, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     preference: Mapped[str] = mapped_column(String, nullable=True)
-    range_age: Mapped[str] = mapped_column(String, nullable=True)
+    range_age: Mapped[str] = mapped_column(String, nullable=True, default='16-45')
     media: Mapped[str] = mapped_column(String, nullable=True, default=json.dumps({'media': []}))
     video: Mapped[str] = mapped_column(String, nullable=True)
     likes_questionnaires: Mapped[JSONB] = mapped_column(JSONB, default=json.dumps({'likes': []}))
