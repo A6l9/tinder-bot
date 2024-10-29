@@ -10,8 +10,8 @@ class TempStorage:
         self.num_elem = 0
         self.id_message = 0
         self.start_message = 0
-        self.exceptions_messages = {}
-        self.send_matches = []
+        self.exceptions_messages = []
+
 
 class UserManager:
     def __init__(self):

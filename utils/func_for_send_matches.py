@@ -1,14 +1,12 @@
 import asyncio
 from asyncio import Task
 import json
-
 from loguru import logger
-
 from sqlalchemy import and_, or_
-
 from database.models import Users, Matches, BotReplicas
-from keyboards.inline.inline_kbs import create_buttons_for_viewing_match
-from loader import db, bot
+from loader import db, bot, user_manager
+from aiogram.types import InputMediaPhoto, InputMediaVideo
+
 
 class SendMatches:
     db = db
@@ -86,59 +84,65 @@ class SendMatches:
                                                 f'>@{another_user_data.username}</a>')
                                     user_link_for_another_user = (f'<a href="tg://user?id={my_user_data.id}"'
                                                  f'>@{my_user_data.username}</a>')
-                                    if content[0][0] == 'photo':
-                                        if another_user.about_yourself:
-                                            description = another_user.about_yourself
-                                        else:
-                                            description = 'Нет описания'
-                                        msg = await bot.send_photo(chat_id=int(user.tg_user_id),
-                                                             photo=content[0][1],
-                                                             protect_content=True,
-                                                             caption=self.replica.replica.format(
-                                                                name=another_user.username, age=another_user.age,
-                                                                 link=user_link,
-                                                                city=another_user.city, desc=description)
-                                                             )
-                                    if content_for_another_user[0][0] == 'photo':
-                                        if user.about_yourself:
-                                            description = user.about_yourself
-                                        else:
-                                            description = 'Нет описания'
-                                        msg_1 = await bot.send_photo(chat_id=int(another_user.tg_user_id),
-                                                             photo=content_for_another_user[0][1],
-                                                             protect_content=True,
-                                                             caption=self.replica.replica.format(
-                                                                name=user.username, age=user.age,
-                                                                 link=user_link_for_another_user,
-                                                                city=user.city, desc=description)
-                                                             )
-                                    if content[0][0] == 'video':
-                                        if another_user.about_yourself:
-                                            description = another_user.about_yourself
-                                        else:
-                                            description = 'Нет описания'
-                                        msg = await bot.send_video(chat_id=int(user.tg_user_id),
-                                                             video=content[0][1],
-                                                             protect_content=True,
-                                                             caption=self.replica.replica.format(
-                                                                 name=another_user.username, age=another_user.age,
-                                                                 link=user_link,
-                                                                 city=another_user.city, desc=description),
-                                                             )
-                                    if content_for_another_user[0][0] == 'video':
-                                        if user.about_yourself:
-                                            description = user.about_yourself
-                                        else:
-                                            description = 'Нет описания'
-                                        msg_1 = await bot.send_video(chat_id=int(another_user.tg_user_id),
-                                                             video=content_for_another_user[0][1],
-                                                             protect_content=True,
-                                                             caption=self.replica.replica.format(
-                                                                name=user.username, age=user.age,
-                                                                 link=user_link_for_another_user,
-                                                                city=user.city, desc=description)
-                                                             )
+                                    media_group_for_my_user = []
+                                    media_group_for_another_user = []
+                                    for index, elem in enumerate(content):
+                                        if index == 0:
+                                            if elem[0] == 'photo':
+                                                if another_user.about_yourself:
+                                                    description = another_user.about_yourself
+                                                else:
+                                                    description = 'Нет описания'
+                                                media_group_for_my_user.append(InputMediaPhoto(media=elem[1],
+                                                    caption=self.replica.replica.format(
+                                                    name=another_user.username, age=another_user.age,
+                                                    link=user_link,
+                                                    city=another_user.city, desc=description)))
+                                            elif elem[0] == 'video':
+                                                media_group_for_my_user.append(InputMediaVideo(media=elem[1],
+                                                    caption=self.replica.replica.format(
+                                                    name=another_user.username, age=another_user.age,
+                                                    link=user_link,
+                                                    city=another_user.city, desc=description)))
+                                        elif elem[0] == 'photo':
+                                            media_group_for_my_user.append(InputMediaPhoto(media=elem[1]))
+                                        elif elem[0] == 'video':
+                                            media_group_for_my_user.append(InputMediaVideo(media=elem[1]))
+                                    for index, elem in enumerate(content_for_another_user):
+                                        if index == 0:
+                                            if elem[0] == 'photo':
+                                                if user.about_yourself:
+                                                    description = user.about_yourself
+                                                else:
+                                                    description = 'Нет описания'
+                                                media_group_for_another_user.append(InputMediaPhoto(media=elem[1],
+                                                    caption=self.replica.replica.format(
+                                                    name=user.username, age=user.age,
+                                                    link=user_link_for_another_user,
+                                                    city=user.city, desc=description)))
+                                            elif elem[0] == 'video':
+                                                media_group_for_another_user.append(InputMediaVideo(media=elem[1],
+                                                    caption=self.replica.replica.format(
+                                                    name=user.username, age=user.age,
+                                                    link=user_link_for_another_user,
+                                                    city=user.city, desc=description)))
+                                        elif elem[0] == 'photo':
+                                            media_group_for_another_user.append(InputMediaPhoto(media=elem[1]))
+                                        elif elem[0] == 'video':
+                                            media_group_for_another_user.append(InputMediaVideo(media=elem[1]))
+                                    msg = await bot.send_media_group(chat_id=int(another_user.tg_user_id),
+                                                         media=media_group_for_another_user,
+                                                         protect_content=True
+                                                     )
+                                    msg_1 = await bot.send_media_group(chat_id=int(user.tg_user_id),
+                                                         media=media_group_for_my_user,
+                                                         protect_content=True
+                                                         )
                                     self.tmp_storage.add(i_match.id)
+                                    temp_storage_user1 = user_manager.get_user(int(user.tg_user_id))
+                                    temp_storage_user2 = user_manager.get_user(int(another_user.tg_user_id))
+                                    temp_storage_user2.exceptions_messages.extend([i.message_id for i in msg])
+                                    temp_storage_user1.exceptions_messages.extend([i.message_id for i in msg_1])
                                     logger.info(f' Message sent successfully for user {user.username} '
                                                 f'{user.tg_user_id} | {another_user.username} '
                                                 f'{another_user.tg_user_id}')

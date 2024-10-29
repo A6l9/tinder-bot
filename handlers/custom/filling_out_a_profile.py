@@ -155,6 +155,7 @@ async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
 
 @profile_router.message(States.location_share, F.location)
 async def location_share_take_answer(message: Message, state: FSMContext):
+    temp_storage = user_manager.get_user(message.from_user.id)
     cities = await db.get_row(Cities, to_many=True)
     latitude = message.location.latitude
     longitude = message.location.longitude
@@ -189,7 +190,7 @@ async def location_share_take_answer(message: Message, state: FSMContext):
         ...
     else:
         try:
-            await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
+            await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
         except:
             ...
         replica = await db.get_row(BotReplicas, unique_name='location_false')
