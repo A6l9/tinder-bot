@@ -29,7 +29,8 @@ async def send_questionnaire_first_time(message):
                 if ((i_user.sex == user_data.preference or user_data.preference == 'no')
                 and i_user.city == user_data.city and int(user_data.range_age.split('-')[0]) <= int(i_user.age)
                         <= int(user_data.range_age.split('-')[1]) and i_user.tg_user_id != str(message.chat.id)):
-                    temp_storage.another_users_id.append(i_user.tg_user_id)
+                    if i_user.done_questionnaire:
+                        temp_storage.another_users_id.append(i_user.tg_user_id)
         if len(temp_storage.another_users_id) != 0:
             replica = await db.get_row(BotReplicas, unique_name='show_profile_another_user')
             another_user_data = await db.get_row(Users, tg_user_id=str(temp_storage.another_users_id[0]))

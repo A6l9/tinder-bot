@@ -189,12 +189,12 @@ async def location_share_take_answer(message: Message, state: FSMContext):
     if location:
         ...
     else:
+        replica = await db.get_row(BotReplicas, unique_name='location_false')
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_location_buttons())
         try:
             await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
         except:
             ...
-        replica = await db.get_row(BotReplicas, unique_name='location_false')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_location_buttons())
 
 
 @profile_router.callback_query(F.data.startswith('name_'))
