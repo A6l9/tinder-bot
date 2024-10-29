@@ -94,7 +94,7 @@ class SendMatches:
                                     else:
                                         description = 'Нет описания'
                                     msg = await bot.send_video(chat_id=int(user.tg_user_id),
-                                                         photo=content[0][1],
+                                                         video=content[0][1],
                                                          protect_content=True,
                                                          caption=self.replica.replica.format(
                                                              name=another_user.username, age=another_user.age,

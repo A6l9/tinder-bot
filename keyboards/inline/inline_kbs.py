@@ -172,10 +172,8 @@ def create_search_preference_buttons():
     builder.adjust(1)
     return builder.as_markup()
 
-async def create_buttons_for_viewing_profiles(user_id, another_user_id):
+async def create_buttons_for_viewing_profiles(user_id):
     temp_storage = user_manager.get_user(user_id)
-    another_user = await db.get_row(Users, tg_user_id=str(another_user_id))
-    temp_storage.another_photo_storage = json.loads(another_user.media).get('media')
     builder = InlineKeyboardBuilder()
     if len(temp_storage.another_photo_storage) == 1:
         builder.row(*pagination_questionnaire_buttons)

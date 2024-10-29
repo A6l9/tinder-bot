@@ -116,13 +116,13 @@ async def location_write_search_city(message: Message, state: FSMContext):
         replica = await db.get_row(BotReplicas, unique_name='city_choose')
         await message.answer(replica.replica, protect_content=True, reply_markup=create_buttons_cities(cities_matches))
         await state.clear()
+        try:
+            await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        except:
+            ...
     else:
         replica = await db.get_row(BotReplicas, unique_name='city_not_found')
         await message.answer(replica.replica, protect_content=True)
-    try:
-        await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-    except:
-        ...
 
 
 @profile_router.callback_query(F.data.startswith('city_'))

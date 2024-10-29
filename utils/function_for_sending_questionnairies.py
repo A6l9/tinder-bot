@@ -33,6 +33,7 @@ async def send_questionnaire_first_time(message):
         if len(temp_storage.another_users_id) != 0:
             replica = await db.get_row(BotReplicas, unique_name='show_profile_another_user')
             another_user_data = await db.get_row(Users, tg_user_id=str(temp_storage.another_users_id[0]))
+            temp_storage.another_photo_storage = json.loads(another_user_data.media).get('media')
             content = json.loads(another_user_data.media).get('media')
             if another_user_data.about_yourself:
                 description = another_user_data.about_yourself
@@ -49,7 +50,7 @@ async def send_questionnaire_first_time(message):
                         city=another_user_data.city,
                         desc=description),
                                      reply_markup=await create_buttons_for_viewing_profiles(
-                                         user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
+                                         user_id=message.chat.id))
             elif content[0][0] == 'video':
                 if another_user_data.about_yourself:
                     description = another_user_data.about_yourself
@@ -64,7 +65,7 @@ async def send_questionnaire_first_time(message):
                         city=another_user_data.city,
                         desc=description),
                                      reply_markup=await create_buttons_for_viewing_profiles(
-                                         user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
+                                         user_id=message.chat.id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
             await message.answer(replica.replica, protect_content=True)
@@ -86,6 +87,7 @@ async def send_questionnaire(message):
             replica = await db.get_row(BotReplicas, unique_name='show_profile_another_user')
             another_user_data = await db.get_row(Users, tg_user_id=str(
                 temp_storage.another_users_id[temp_storage.index_another_user]))
+            temp_storage.another_photo_storage = json.loads(another_user_data.media).get('media')
             content = json.loads(another_user_data.media).get('media')
             if another_user_data.about_yourself:
                 description = another_user_data.about_yourself
@@ -101,7 +103,7 @@ async def send_questionnaire(message):
                 await bot.edit_message_media(chat_id=user_data.tg_user_id,
                                      media=media_type, message_id=message.message_id,
                                      reply_markup=await create_buttons_for_viewing_profiles(
-                                         user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
+                                         user_id=message.chat.id))
             elif content[0][0] == 'video':
                 if another_user_data.about_yourself:
                     description = another_user_data.about_yourself
@@ -116,7 +118,7 @@ async def send_questionnaire(message):
                 await bot.edit_message_media(chat_id=user_data.tg_user_id,
                                      media=media_type, message_id=message.message_id,
                                      reply_markup=await create_buttons_for_viewing_profiles(
-                                         user_id=message.chat.id, another_user_id=another_user_data.tg_user_id))
+                                         user_id=message.chat.id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
             await message.answer(replica.replica, protect_content=True)

@@ -298,10 +298,10 @@ pagination_questionnaire_buttons_end = (
 pagination_questionnaire_match_buttons = (
     InlineKeyboardButton(
         text='️️️️️◀️',
-        callback_data='swipe_left'
+        callback_data='swipe_left_match'
     ),
     InlineKeyboardButton(
         text='▶️',
-        callback_data='swipe_right'
+        callback_data='swipe_right_match'
     ),
 )
