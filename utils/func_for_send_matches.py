@@ -14,6 +14,7 @@ class SendMatches:
     db = db
     bot = bot
     lock = asyncio.Semaphore(5)
+    lock_match = {}
     def __init__(self):
         self.users_for_send = []
         self.user_matches_id = {}
@@ -21,7 +22,7 @@ class SendMatches:
         self.matches = []
         self.task_storage: dict[int: Task] = {}
         self.replica = None
-
+        self.tmp_storage = set()
     async def start(self):
         """
         Подгружает пользователей из бд и
@@ -31,6 +32,7 @@ class SendMatches:
         await db.initial()
         logger.info('Start SendMatches')
         while True:
+            self.tmp_storage = set()
             self.users_for_send = await self.db.get_row(
                 Users,
                 to_many=True,
@@ -57,95 +59,104 @@ class SendMatches:
         """
         matches_list = self.send_storage.get(user.tg_user_id)
         amount_matches = len(matches_list)
+        print(self.tmp_storage)
         if amount_matches != 0:
             try:
                 for i_match in matches_list:
-                    for _ in range(5):
-                        async with self.lock:
-                            cancel = False
-                            msg = None
-                            try:
-                                if i_match.user_id_two == user.tg_user_id:
-                                    another_user = await db.get_row(Users, tg_user_id=i_match.user_id_one)
-                                    flag = 'one'
-                                elif i_match.user_id_one == user.tg_user_id:
-                                    another_user = await db.get_row(Users, tg_user_id=i_match.user_id_two)
-                                    flag = 'two'
-                                content = json.loads(another_user.media).get('media')
-                                content_for_another_user = json.loads(user.media).get('media')
-                                another_user_data = await bot.get_chat(int(another_user.tg_user_id))
-                                my_user_data = await bot.get_chat(int(user.tg_user_id))
-                                user_link =(f'<a href="tg://user?id={another_user_data.id}"'
-                                            f'>@{another_user_data.username}</a>')
-                                user_link_for_another_user = (f'<a href="tg://user?id={my_user_data.id}"'
-                                             f'>@{my_user_data.username}</a>')
-                                if content[0][0] == 'photo':
-                                    if another_user.about_yourself:
-                                        description = another_user.about_yourself
-                                    else:
-                                        description = 'Нет описания'
-                                    msg = await bot.send_photo(chat_id=int(user.tg_user_id),
-                                                         photo=content[0][1],
-                                                         protect_content=True,
-                                                         caption=self.replica.replica.format(
-                                                            name=another_user.username, age=another_user.age,
-                                                             link=user_link,
-                                                            city=another_user.city, desc=description)
-                                                         )
-                                if content_for_another_user[0][0] == 'photo':
-                                    if user.about_yourself:
-                                        description = user.about_yourself
-                                    else:
-                                        description = 'Нет описания'
-                                    msg_1 = await bot.send_photo(chat_id=int(another_user.tg_user_id),
-                                                         photo=content[0][1],
-                                                         protect_content=True,
-                                                         caption=self.replica.replica.format(
-                                                            name=user.username, age=user.age,
-                                                             link=user_link_for_another_user,
-                                                            city=user.city, desc=description)
-                                                         )
-                                if content[0][0] == 'video':
-                                    if another_user.about_yourself:
-                                        description = another_user.about_yourself
-                                    else:
-                                        description = 'Нет описания'
-                                    msg = await bot.send_video(chat_id=int(user.tg_user_id),
-                                                         video=content[0][1],
-                                                         protect_content=True,
-                                                         caption=self.replica.replica.format(
-                                                             name=another_user.username, age=another_user.age,
-                                                             link=user_link,
-                                                             city=another_user.city, desc=description),
-                                                         )
-                                if content_for_another_user[0][0] == 'video':
-                                    if user.about_yourself:
-                                        description = user.about_yourself
-                                    else:
-                                        description = 'Нет описания'
-                                    msg_1 = await bot.send_video(chat_id=int(another_user.tg_user_id),
-                                                         video=content[0][1],
-                                                         protect_content=True,
-                                                         caption=self.replica.replica.format(
-                                                            name=user.username, age=user.age,
-                                                             link=user_link_for_another_user,
-                                                            city=user.city, desc=description)
-                                                         )
-                                logger.info(f' Message sent successfully for user {user.username} '
-                                            f'{user.tg_user_id} | {another_user.username} {another_user.tg_user_id}')
-                                await asyncio.sleep(10)
-                                break
-                            except asyncio.CancelledError:
-                                cancel = True
-                                raise
-                            finally:
-                                if msg and msg_1:
-                                    if flag == 'one':
-                                        await self.db.update_matches_row(Matches, tg_user_id=user.tg_user_id,
-                                         tg_user_id_another_user=another_user.tg_user_id, user_id_two=1, is_send=True)
-                                    elif flag == 'two':
-                                        await self.db.update_matches_row(Matches, tg_user_id=user.tg_user_id,
-                                         tg_user_id_another_user=another_user.tg_user_id, user_id_one=1, is_send=True)
+                    lock_match = self.lock_match.setdefault(i_match.id, asyncio.Lock())
+                    async with lock_match:
+                        if i_match.id in self.tmp_storage:
+                            continue
+                        for _ in range(5):
+                            async with self.lock:
+                                cancel = False
+                                msg = None
+                                try:
+                                    if i_match.user_id_two == user.tg_user_id:
+                                        another_user = await db.get_row(Users, tg_user_id=i_match.user_id_one)
+                                        flag = 'one'
+                                    elif i_match.user_id_one == user.tg_user_id:
+                                        another_user = await db.get_row(Users, tg_user_id=i_match.user_id_two)
+                                        flag = 'two'
+                                    content = json.loads(another_user.media).get('media')
+                                    content_for_another_user = json.loads(user.media).get('media')
+                                    another_user_data = await bot.get_chat(int(another_user.tg_user_id))
+                                    my_user_data = await bot.get_chat(int(user.tg_user_id))
+                                    user_link =(f'<a href="tg://user?id={another_user_data.id}"'
+                                                f'>@{another_user_data.username}</a>')
+                                    user_link_for_another_user = (f'<a href="tg://user?id={my_user_data.id}"'
+                                                 f'>@{my_user_data.username}</a>')
+                                    if content[0][0] == 'photo':
+                                        if another_user.about_yourself:
+                                            description = another_user.about_yourself
+                                        else:
+                                            description = 'Нет описания'
+                                        msg = await bot.send_photo(chat_id=int(user.tg_user_id),
+                                                             photo=content[0][1],
+                                                             protect_content=True,
+                                                             caption=self.replica.replica.format(
+                                                                name=another_user.username, age=another_user.age,
+                                                                 link=user_link,
+                                                                city=another_user.city, desc=description)
+                                                             )
+                                    if content_for_another_user[0][0] == 'photo':
+                                        if user.about_yourself:
+                                            description = user.about_yourself
+                                        else:
+                                            description = 'Нет описания'
+                                        msg_1 = await bot.send_photo(chat_id=int(another_user.tg_user_id),
+                                                             photo=content_for_another_user[0][1],
+                                                             protect_content=True,
+                                                             caption=self.replica.replica.format(
+                                                                name=user.username, age=user.age,
+                                                                 link=user_link_for_another_user,
+                                                                city=user.city, desc=description)
+                                                             )
+                                    if content[0][0] == 'video':
+                                        if another_user.about_yourself:
+                                            description = another_user.about_yourself
+                                        else:
+                                            description = 'Нет описания'
+                                        msg = await bot.send_video(chat_id=int(user.tg_user_id),
+                                                             video=content[0][1],
+                                                             protect_content=True,
+                                                             caption=self.replica.replica.format(
+                                                                 name=another_user.username, age=another_user.age,
+                                                                 link=user_link,
+                                                                 city=another_user.city, desc=description),
+                                                             )
+                                    if content_for_another_user[0][0] == 'video':
+                                        if user.about_yourself:
+                                            description = user.about_yourself
+                                        else:
+                                            description = 'Нет описания'
+                                        msg_1 = await bot.send_video(chat_id=int(another_user.tg_user_id),
+                                                             video=content_for_another_user[0][1],
+                                                             protect_content=True,
+                                                             caption=self.replica.replica.format(
+                                                                name=user.username, age=user.age,
+                                                                 link=user_link_for_another_user,
+                                                                city=user.city, desc=description)
+                                                             )
+                                    self.tmp_storage.add(i_match.id)
+                                    logger.info(f' Message sent successfully for user {user.username} '
+                                                f'{user.tg_user_id} | {another_user.username} '
+                                                f'{another_user.tg_user_id}')
+                                    await asyncio.sleep(10)
+                                    break
+                                except asyncio.CancelledError:
+                                    cancel = True
+                                    raise
+                                finally:
+                                    if msg and msg_1:
+                                        if flag == 'one':
+                                            await self.db.update_matches_row(Matches, tg_user_id=user.tg_user_id,
+                                             tg_user_id_another_user=another_user.tg_user_id, user_id_two=1,
+                                                                             is_send=True)
+                                        elif flag == 'two':
+                                            await self.db.update_matches_row(Matches, tg_user_id=user.tg_user_id,
+                                             tg_user_id_another_user=another_user.tg_user_id, user_id_one=1,
+                                                                             is_send=True)
             except Exception as exc:
                 logger.exception(f'Error send message for user {user.username} with id: '
                                  f'{user.tg_user_id}. Error: {exc}')
