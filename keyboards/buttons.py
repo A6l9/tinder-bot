@@ -308,15 +308,15 @@ pagination_questionnaire_match_buttons = (
 
 go_to_somewhere = (
     InlineKeyboardButton(
-        text='️️️️Приступить к просмотру анкет',
+        text='️️️️Смотреть анкеты',
         callback_data='goto_start'
     ),
     InlineKeyboardButton(
-        text='Приступить к просмотру/редактированию анкеты',
+        text='Профиль',
         callback_data='goto_show_profile'
     ),
     InlineKeyboardButton(
-        text='Приступить к изменению параметров поиска',
+        text='Параметры поиска',
         callback_data='goto_change_parameters'
     ),
 )
