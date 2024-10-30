@@ -200,9 +200,6 @@ class BaseInterface:
         :return:
         """
         async with self.async_ses() as session:
-            # if jsn_tags != 0:
-            #     row = await session.execute(update(Users, ).where(Users.user_id == str(usr_id)).values(
-            #         selected_tags=jsn_tags, time_update_tags_freelancer=time_update_tags))
             try:
                 await session.commit()
                 logger.debug(f'Successfully update data user {usr_id}')

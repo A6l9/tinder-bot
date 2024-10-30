@@ -94,7 +94,8 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
     if type_record_location == 'share':
         try:
             replica = await db.get_row(BotReplicas, unique_name='share_location')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_share_location_button())
+            await call.message.answer(replica.replica, protect_content=True,
+                                      reply_markup=create_share_location_button())
             await state.set_state(States.location_edit_share)
         except Exception as exc:
             logger.error(f'Error take user location: {exc}')
@@ -113,7 +114,8 @@ async def location_write_search_city(message: Message, state: FSMContext):
     cities_matches = await db.search_cities(str(message.text))
     if cities_matches:
         replica = await db.get_row(BotReplicas, unique_name='city_choose')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_buttons_cities_edit(cities_matches))
+        await message.answer(replica.replica, protect_content=True,
+                             reply_markup=create_buttons_cities_edit(cities_matches))
         await state.clear()
     else:
         replica = await db.get_row(BotReplicas, unique_name='city_not_found')
@@ -190,7 +192,8 @@ async def add_new_media(call: CallbackQuery, state: FSMContext):
     list_media = json.loads(user_data.media).get('media')
     if len(list_media) == 5:
         replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-        await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=True, reply_markup=create_cancel_button())
+        await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
+                                  reply_markup=create_cancel_button())
         await state.clear()
     else:
         replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')

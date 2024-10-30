@@ -1,8 +1,8 @@
 import os
 
-BOT_TOKEN = os.getenv('BOT_TOKEN', '7973417189:AAFbVkBKuO2R65TDGk480ynThc6qPS77Ws0')
-POSTGRES_DB = os.getenv('POSTGRES_DB', 'tg_tinder')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'dmIiMBrMQQa5r2xAzm65o2OwR')
-POSTGRES_USER = os.getenv('POSTGRES_USER', 'kramer')
-HOST = os.getenv('HOST', '185.80.234.165')
-PORT = os.getenv('PORT', '2260')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+POSTGRES_DB = os.getenv('POSTGRES_DB')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+POSTGRES_USER = os.getenv('POSTGRES_USER')
+HOST = os.getenv('HOST')
+PORT = os.getenv('PORT')

@@ -78,7 +78,7 @@ async def swipe_left_photo(call: CallbackQuery):
         if len(temp_storage.another_photo_storage) != 1:
             temp_storage.num_page_photo_for_another_user -= 1
             another_user_data = await db.get_row(Users,
-                                             tg_user_id=str(temp_storage.another_users_id[temp_storage.index_another_user]))
+                                     tg_user_id=str(temp_storage.another_users_id[temp_storage.index_another_user]))
             content = None
             replica = await db.get_row(BotReplicas, unique_name='show_profile_another_user')
             content = temp_storage.another_photo_storage
@@ -123,13 +123,13 @@ async def like_questionnaire(call: CallbackQuery):
         if (await db.get_row(Matches, user_id_one=str(call.from_user.id),
                             user_id_two=temp_storage.another_users_id[temp_storage.index_another_user])):
             await db.update_matches_row(Matches, tg_user_id=str(call.from_user.id),
-                            tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
-                            user_id_one=1, user_reaction_one=True)
+                        tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
+                        user_id_one=1, user_reaction_one=True)
         elif (await db.get_row(Matches, user_id_two=str(call.from_user.id),
                             user_id_one=temp_storage.another_users_id[temp_storage.index_another_user])):
             await db.update_matches_row(Matches, tg_user_id=str(call.from_user.id),
-                            tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
-                            user_id_two=1, user_reaction_two=True)
+                        tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
+                        user_id_two=1, user_reaction_two=True)
         else:
             await db.add_row(Matches, user_id_one=str(call.from_user.id),
                              user_reaction_one=True, user_reaction_two=None,
@@ -154,13 +154,13 @@ async def dislike_questionnaire(call: CallbackQuery):
         if (await db.get_row(Matches, user_id_one=str(call.from_user.id),
                             user_id_two=temp_storage.another_users_id[temp_storage.index_another_user])):
             await db.update_matches_row(Matches, tg_user_id=str(call.from_user.id),
-                            tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
-                            user_id_one=1, user_reaction_one=False)
+                        tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
+                        user_id_one=1, user_reaction_one=False)
         elif (await db.get_row(Matches, user_id_two=str(call.from_user.id),
                             user_id_one=temp_storage.another_users_id[temp_storage.index_another_user])):
             await db.update_matches_row(Matches, tg_user_id=str(call.from_user.id),
-                            tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
-                            user_id_two=1, user_reaction_two=False)
+                        tg_user_id_another_user=str(temp_storage.another_users_id[temp_storage.index_another_user]),
+                        user_id_two=1, user_reaction_two=False)
         else:
             await db.add_row(Matches, user_id_one=str(call.from_user.id),
                              user_reaction_one=False, user_reaction_two=None,

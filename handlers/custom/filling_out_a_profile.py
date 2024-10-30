@@ -99,7 +99,8 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
     if type_record_location == 'share':
         try:
             replica = await db.get_row(BotReplicas, unique_name='share_location')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_share_location_button())
+            await call.message.answer(replica.replica, protect_content=True,
+                                      reply_markup=create_share_location_button())
             await state.set_state(States.location_share)
         except Exception as exc:
             logger.error(f'Error take user location: {exc}')
@@ -144,11 +145,13 @@ async def location_write_take_answer(call: CallbackQuery, state: FSMContext):
                                  city_type=city.city_type, city=city.city)
             replica = await db.get_row(BotReplicas, unique_name='name_question')
             if call.from_user.first_name:
-                await call.message.answer(replica.replica, protect_content=True, reply_markup=create_name_question(call.from_user.first_name,
-                                                                                             flag='first_name'))
+                await call.message.answer(replica.replica, protect_content=True,
+                                          reply_markup=create_name_question(call.from_user.first_name,
+                                                                            flag='first_name'))
             elif call.from_user.username:
-                await call.message.answer(replica.replica, protect_content=True, reply_markup=create_name_question(call.from_user.username,
-                                                                                             flag='username'))
+                await call.message.answer(replica.replica, protect_content=True,
+                                          reply_markup=create_name_question(call.from_user.username,
+                                                                                 flag='username'))
             await state.set_state(States.name_question)
         except Exception as exc:
             logger.error(f'Error updating user location: {exc}')
@@ -305,7 +308,8 @@ async def take_photo_or_video(message: Message, state: FSMContext):
                     await state.clear()
                 else:
                     replica = await db.get_row(BotReplicas, unique_name='add_more_media')
-                    await message.answer(replica.replica, protect_content=True, reply_markup=create_add_or_no_buttons())
+                    await message.answer(replica.replica, protect_content=True,
+                                         reply_markup=create_add_or_no_buttons())
                     await state.set_state(States.add_or_no_media)
     elif message.video:
         content_type = 'video'
@@ -366,7 +370,6 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica, protect_content=True, reply_markup=create_go_to_somewhere_buttons())
-    # await func_for_send_prof_first_time(call.from_user.id, call.message)
     await state.clear()
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
