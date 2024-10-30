@@ -15,7 +15,6 @@ start_router = Router()
 
 @start_router.message(CommandStart())
 async def start(message: Message):
-    x = user_manager
     temp_storage = user_manager.get_user(message.from_user.id)
     logger.info('Command start')
     await db.initial()
@@ -23,6 +22,7 @@ async def start(message: Message):
     temp_storage.start_message = message
     user_lock = await get_user_lock(message.from_user.id)
     async with user_lock:
+        temp_storage.profile_message = 0
         if not user:
             try:
                 temp_storage.start_message = message

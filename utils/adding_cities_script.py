@@ -4,7 +4,6 @@ import csv
 from database.models import Cities
 
 
-
 async def add_cities():
     await db.initial()
     list_to_add = []

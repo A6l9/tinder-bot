@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
 from database.models import BotReplicas, Users
-from loader import db, bot
+from loader import db, bot, user_manager
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import create_search_preference_buttons
 from utils.func_for_send_search_parameters import func_for_send_search_parameters
@@ -17,6 +17,8 @@ change_search_parameters_router = Router()
 
 @change_search_parameters_router.message(Command('change_search_parameters'))
 async def change_search_parameters(message: Message):
+    temp_storage = user_manager.get_user(message.from_user.id)
+    temp_storage.profile_message = 0
     await func_for_send_search_parameters(message)
 
 

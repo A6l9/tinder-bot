@@ -185,7 +185,6 @@ class SendMatches:
                                     Matches.user_id_two == str(user_id), Matches.user_reaction_one == True,
                                     Matches.user_reaction_two == True, Matches.is_send == False))}
         self.matches = await db.get_row(Matches, to_many=True, filter=sql_filter)
-        print(f'id: {user_id} {self.matches}')
         self.send_storage[user_id] = [
             i for i in self.matches
         ]
@@ -198,12 +197,3 @@ async def main_send_matches():
 
 if __name__ == '__main__':
     asyncio.run(main_send_matches())
-
-# reply_markup=await create_buttons_for_viewing_match(
-#                                                              user_id=user.tg_user_id,
-#                                                              another_user_id=another_user.tg_user_id)
-
-# ,
-#                                                          reply_markup=await create_buttons_for_viewing_match(
-#                                                             user_id=user.tg_user_id,
-#                                                             another_user_id=another_user.tg_user_id)

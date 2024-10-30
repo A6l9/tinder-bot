@@ -358,5 +358,3 @@ async def send_media_before_delete(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica, protect_content=True,)
-
-

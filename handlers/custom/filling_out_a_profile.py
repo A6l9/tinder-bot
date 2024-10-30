@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from loguru import logger
 
 from utils.clear_back import clear_back
-from utils.function_for_sending_a_profile import func_for_send_prof
+from utils.function_for_sending_a_profile import func_for_send_prof, func_for_send_prof_first_time
 from utils.haversine import haversine
 from loader import db, user_manager
 from database.models import BotReplicas, Users, Cities
@@ -361,7 +361,7 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
     await call.message.answer(replica.replica, protect_content=True)
-    await func_for_send_prof(call.from_user.id, call.message)
+    await func_for_send_prof_first_time(call.from_user.id, call.message)
     await state.clear()
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)

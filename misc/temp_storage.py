@@ -11,6 +11,7 @@ class TempStorage:
         self.id_message = 0
         self.start_message = 0
         self.exceptions_messages = []
+        self.profile_message = 0
 
 
 class UserManager:

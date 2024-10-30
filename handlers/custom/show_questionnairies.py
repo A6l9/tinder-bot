@@ -146,7 +146,6 @@ async def like_questionnaire(call: CallbackQuery):
                 ...
 
 
-
 @show_questionnaire_router.callback_query(F.data == 'dislike')
 async def dislike_questionnaire(call: CallbackQuery):
     user_lock = await get_user_lock(call.from_user.id)

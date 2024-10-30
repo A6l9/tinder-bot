@@ -41,7 +41,6 @@ class BaseInterface:
         async with self.async_ses() as session:
             for rec in rows_object:
                 await session.delete(rec)
-            # await session.delete(records)
             await session.commit()
 
     async def delete_rows(self, model: Any, **filter_by):
@@ -52,7 +51,6 @@ class BaseInterface:
                 try:
                     for rec in res:
                         await session.delete(rec)
-                    # await session.delete(records)
                     await session.commit()
                     return True
                 except Exception:
@@ -113,7 +111,6 @@ class BaseInterface:
         :return:
         """
         async with self.async_ses() as session:
-            # async with self.locks.get(model, asyncio.Lock()):
             if filter:
                 row = await session.execute(
                     Query(model).filter_by(**kwargs).filter(filter['filter']).order_by(order_by))
@@ -123,7 +120,6 @@ class BaseInterface:
                 res = [*row.scalars()]
             else:
                 res = row.scalar()
-            # if res is not None:
             return res
 
     async def get_or_create_row(self, model: Any, filter_by=None, **kwargs):
@@ -138,7 +134,6 @@ class BaseInterface:
             filter_by = kwargs
 
         async with self.async_ses() as session:
-            # async with self.locks.get(model, asyncio.Lock()):
             row = await session.execute(Query(model).filter_by(**filter_by))
             res = row.scalar()
             if res is None:
@@ -148,18 +143,15 @@ class BaseInterface:
                     await session.commit()
                 except Exception as ex:
                     logger.warning(f'COMMIT FAILED: {model.__name__}, {kwargs=}')
-                    # print(ex)
             return res
 
     async def update_user_row(self, model, tg_user_id, **kwargs):
 
         async with self.async_ses() as session:
-            # async with self.locks.get(model, asyncio.Lock()):
             row = await session.execute(update(model).where(Users.tg_user_id == str(tg_user_id )).values(**kwargs))
 
             try:
                 await session.commit()
-                # return row.scalar()
             except Exception as ex:
                 print(ex)
                 print(f'failed update {model.__tablename__}')
@@ -168,7 +160,6 @@ class BaseInterface:
                                  user_id_one=None, user_id_two=None, **kwargs):
 
         async with self.async_ses() as session:
-            # async with self.locks.get(model, asyncio.Lock()):
             if user_id_one:
                 row = await session.execute(update(Matches).where(Matches.user_id_one == str(
                     tg_user_id), Matches.user_id_two == str(tg_user_id_another_user)).values(**kwargs))
@@ -178,7 +169,6 @@ class BaseInterface:
                     tg_user_id)).values(**kwargs))
             try:
                 await session.commit()
-                # return row.scalar()
             except Exception as ex:
                 print(ex)
                 print(f'failed update {model.__tablename__}')
@@ -193,7 +183,6 @@ class BaseInterface:
         :return:
         """
         async with self.async_ses() as session:
-            # async with self.locks.get(model, asyncio.Lock()):
             if filter:
                 row = await session.execute(
                     Query(model).filter_by(**kwargs).filter(filter['filter']).order_by(order_by))
@@ -203,7 +192,6 @@ class BaseInterface:
                 res = [*row.scalars()]
             else:
                 res = row.scalar()
-            # if res is not None:
             return res
 
     async def update_data_user(self, model, usr_id):

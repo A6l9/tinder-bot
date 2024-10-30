@@ -16,6 +16,7 @@ show_router = Router()
 @show_router.message(Command('show_my_profile'))
 async def show_questionnaire(message: Message):
     temp_storage = user_manager.get_user(message.from_user.id)
+    temp_storage.profile_message = message.message_id + 1
     logger.info('Command show_profile')
     user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     content = None
