@@ -1,8 +1,8 @@
 import json
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters.command import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
 from database.models import Users, BotReplicas
@@ -15,10 +15,10 @@ show_router = Router()
 
 @show_router.message(Command('show_my_profile'))
 async def show_questionnaire(message: Message):
-    temp_storage = user_manager.get_user(message.from_user.id)
+    temp_storage = user_manager.get_user(message.chat.id)
     temp_storage.profile_message = message.message_id + 1
     logger.info('Command show_profile')
-    user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+    user_data = await db.get_row(Users, tg_user_id=str(message.chat.id))
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if user_data and user_data.done_questionnaire:
@@ -34,7 +34,7 @@ async def show_questionnaire(message: Message):
                     sex = 'Мужской'
                 elif user_data.sex == 'woman':
                     sex = 'Женский'
-                await bot.send_photo(chat_id=message.from_user.id,
+                await bot.send_photo(chat_id=message.chat.id,
                                 photo=content[temp_storage.num_elem][1],
                                      protect_content=True,
                                      caption=replica.replica.replace('|n', '\n').format(
@@ -44,7 +44,7 @@ async def show_questionnaire(message: Message):
                                                                  city=user_data.city,
                                                                  desc=description),
                                                                  reply_markup=await create_points_buttons(
-                                                                     message.from_user.id))
+                                                                     message.chat.id))
             elif content[temp_storage.num_elem][0] == 'video':
                 if user_data.about_yourself:
                     description = user_data.about_yourself
@@ -55,7 +55,7 @@ async def show_questionnaire(message: Message):
                     sex = 'Мужской'
                 elif user_data.sex == 'woman':
                     sex = 'Женский'
-                await bot.send_video(chat_id=message.from_user.id,
+                await bot.send_video(chat_id=message.chat.id,
                                      video=content[temp_storage.num_elem][1],
                                      protect_content=True,
                                      caption=replica.replica.replace('|n', '\n').format(
@@ -65,7 +65,7 @@ async def show_questionnaire(message: Message):
                                                                     city=user_data.city,
                                                                     desc=description),
                                                                     reply_markup=await create_points_buttons(
-                                                                        message.from_user.id))
+                                                                        message.chat.id))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
@@ -74,3 +74,8 @@ async def show_questionnaire(message: Message):
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:
         ...
+
+
+@show_router.callback_query(F.data == 'goto_show_profile')
+async def got_to_show_profile(call: CallbackQuery):
+    await show_questionnaire(message=call.message)

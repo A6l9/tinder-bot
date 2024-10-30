@@ -1,6 +1,6 @@
 
-from aiogram import Router
-from aiogram.types import Message
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from loader import db, user_manager, bot
 from loguru import logger
@@ -15,12 +15,13 @@ start_router = Router()
 
 @start_router.message(CommandStart())
 async def start(message: Message):
-    temp_storage = user_manager.get_user(message.from_user.id)
+    temp_storage = user_manager.get_user(message.chat.id)
     logger.info('Command start')
     await db.initial()
-    user = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-    temp_storage.start_message = message
-    user_lock = await get_user_lock(message.from_user.id)
+    user = await db.get_row(Users, tg_user_id=str(message.chat.id))
+    if not message.reply_markup:
+        temp_storage.start_message = message
+    user_lock = await get_user_lock(message.chat.id)
     async with user_lock:
         temp_storage.profile_message = 0
         if not user:
@@ -38,3 +39,7 @@ async def start(message: Message):
             await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
         except:
             ...
+
+@start_router.callback_query(F.data == 'goto_start')
+async  def go_to_start(call: CallbackQuery):
+    await start(message=call.message)

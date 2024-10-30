@@ -17,7 +17,7 @@ change_search_parameters_router = Router()
 
 @change_search_parameters_router.message(Command('change_search_parameters'))
 async def change_search_parameters(message: Message):
-    temp_storage = user_manager.get_user(message.from_user.id)
+    temp_storage = user_manager.get_user(message.chat.id)
     temp_storage.profile_message = 0
     await func_for_send_search_parameters(message)
 
@@ -78,3 +78,8 @@ async def change_sex_preference(call: CallbackQuery, state: FSMContext):
 async def cancel_search(call: CallbackQuery, state: FSMContext):
     await func_for_send_search_parameters(message=call.message)
     await state.clear()
+
+
+@change_search_parameters_router.callback_query(F.data == 'goto_change_parameters')
+async def go_to_change_parameters(call: CallbackQuery):
+    await change_search_parameters(message=call.message)

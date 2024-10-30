@@ -6,17 +6,18 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from loguru import logger
 
 from utils.clear_back import clear_back
-from utils.function_for_sending_a_profile import func_for_send_prof, func_for_send_prof_first_time
+from utils.function_for_sending_a_profile import func_for_send_prof
 from utils.haversine import haversine
 from loader import db, user_manager
 from database.models import BotReplicas, Users, Cities
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_buttons, create_location_buttons,
                                          create_name_question, create_buttons_cities, create_skip_button, \
-                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button
-                                         )
+                                         create_add_or_no_buttons, create_goto_profile_if_limit_photo_button,
+                                         create_go_to_somewhere_buttons)
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
+from utils.user_lock import get_user_lock
 from loader import bot
 
 profile_router = Router()
@@ -24,15 +25,19 @@ profile_router = Router()
 @profile_router.callback_query(F.data == 'start_completion')
 async def start_completion(call: CallbackQuery, state: FSMContext):
     await db.initial()
+    user_lock = await get_user_lock(call.from_user.id)
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    if not user:
-        try:
-            temp_storage = user_manager.get_user(call.from_user.id)
-            temp_storage.start_message = call.message
-            await db.add_row(Users, tg_user_id=str(call.from_user.id))
-        except Exception as exc:
-            logger.error(exc)
-            await call.message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
+    await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({"media": []}),
+                             about_yourself=None)
+    async with user_lock:
+        if not user:
+            try:
+                temp_storage = user_manager.get_user(call.from_user.id)
+                temp_storage.start_message = call.message
+                await db.add_row(Users, tg_user_id=str(call.from_user.id))
+            except Exception as exc:
+                logger.error(exc)
+                await call.message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
     await state.set_state(States.age_question)
     replica = await db.get_row(BotReplicas, unique_name='age_question')
     await call.message.edit_text(replica.replica)
@@ -360,8 +365,8 @@ async def no_more_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     await db.update_user_row(Users, tg_user_id=str(call.from_user.id), done_questionnaire=True)
     replica = await db.get_row(BotReplicas, unique_name='done_questionnaire')
-    await call.message.answer(replica.replica, protect_content=True)
-    await func_for_send_prof_first_time(call.from_user.id, call.message)
+    await call.message.answer(replica.replica, protect_content=True, reply_markup=create_go_to_somewhere_buttons())
+    # await func_for_send_prof_first_time(call.from_user.id, call.message)
     await state.clear()
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)

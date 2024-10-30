@@ -8,7 +8,7 @@ from keyboards.buttons import start_button, sex_buttons, \
     add_or_no_buttons, show_my_profile_if_limit_photo_button, sex_buttons_edit, cancel_search_button, \
     change_search_parameters_buttons, search_preference_buttons, pagination_questionnaire_buttons, \
     pagination_questionnaire_buttons_start, pagination_questionnaire_buttons_middle, \
-    pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons
+    pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons, go_to_somewhere
 from loader import db
 from database.models import Users
 import json
@@ -198,4 +198,10 @@ async def create_buttons_for_viewing_match(user_id, another_user_id):
         builder.row(*pagination_questionnaire_match_buttons)
     elif 0 < temp_storage.num_page_photo_for_another_user < len(temp_storage.another_photo_storage) - 1:
         builder.row(*pagination_questionnaire_match_buttons)
+    return builder.as_markup()
+
+def create_go_to_somewhere_buttons():
+    builder = InlineKeyboardBuilder()
+    builder.row(*go_to_somewhere)
+    builder.adjust(1)
     return builder.as_markup()

@@ -3,6 +3,7 @@ from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 from loader import db, bot, user_manager
 from database.models import Users, BotReplicas
 import json
+from loguru import logger
 from keyboards.inline.inline_kbs import create_points_buttons
 
 
@@ -35,9 +36,12 @@ async def move_left(call: CallbackQuery):
                                                              age=user_data.age,
                                                              city=user_data.city,
                                                              desc=description))
-            await bot.edit_message_media(chat_id=call.from_user.id,
+            try:
+                await bot.edit_message_media(chat_id=call.from_user.id,
                                  media=media_type, message_id=call.message.message_id,
                                  reply_markup=await create_points_buttons(call.from_user.id))
+            except Exception as exc:
+                logger.debug(f'This exception absolutely normal {exc}')
         elif content[temp_storage.num_elem][0] == 'video':
             if user_data.about_yourself:
                 description = user_data.about_yourself
@@ -55,9 +59,12 @@ async def move_left(call: CallbackQuery):
                                              sex=sex,
                                              city=user_data.city,
                                              desc=description))
-            await bot.edit_message_media(chat_id=call.from_user.id,
+            try:
+                await bot.edit_message_media(chat_id=call.from_user.id,
                                  media=media_type, message_id=call.message.message_id,
                                  reply_markup=await create_points_buttons(call.from_user.id))
+            except Exception as exc:
+                logger.debug(f'This exception absolutely normal {exc}')
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await call.answer(replica.replica)
@@ -89,9 +96,12 @@ async def move_right(call: CallbackQuery):
                                              age=user_data.age,
                                              city=user_data.city,
                                              desc=description))
-            await bot.edit_message_media(chat_id=call.from_user.id,
+            try:
+                await bot.edit_message_media(chat_id=call.from_user.id,
                                          media=media_type, message_id=call.message.message_id,
                                          reply_markup=await create_points_buttons(call.from_user.id))
+            except Exception as exc:
+                logger.debug(f'This exception absolutely normal {exc}')
         elif content[temp_storage.num_elem][0] == 'video':
             if user_data.about_yourself:
                 description = user_data.about_yourself
@@ -109,9 +119,12 @@ async def move_right(call: CallbackQuery):
                                              age=user_data.age,
                                              city=user_data.city,
                                              desc=description))
-            await bot.edit_message_media(chat_id=call.from_user.id,
+            try:
+                await bot.edit_message_media(chat_id=call.from_user.id,
                                          media=media_type, message_id=call.message.message_id,
                                          reply_markup=await create_points_buttons(call.from_user.id))
+            except Exception as exc:
+                logger.debug(f'This exception absolutely normal {exc}')
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await call.answer(replica.replica)
