@@ -320,3 +320,40 @@ go_to_somewhere = (
         callback_data='goto_change_parameters'
     ),
 )
+
+admin_panel = (
+    InlineKeyboardButton(
+        text='⚙️ Панель администратора',
+        callback_data='admin_panel'
+    ),
+)
+
+admin_panel_buttons = (
+    InlineKeyboardButton(
+        text='Статистика📈',
+        callback_data='statistics'
+    ),
+    InlineKeyboardButton(
+        text='Рассылка📢',
+        callback_data='mailing'
+    ),
+    InlineKeyboardButton(
+        text='Удалить анкету пользователя🗑',
+        callback_data='delete_user_profile'
+    ),
+    InlineKeyboardButton(
+        text='Заблокировать пользователя🚫',
+        callback_data='ban_user'
+    ),
+    InlineKeyboardButton(
+        text='Закрыть❌',
+        callback_data='close_admin_panel'
+    ),
+)
+
+close_admin_panel = (
+    InlineKeyboardButton(
+        text='Закрыть❌',
+        callback_data='close_wrap_admin_panel'
+    ),
+)

@@ -1,4 +1,5 @@
 import json
+from email.policy import default
 
 from sqlalchemy import String, Integer, DateTime, Boolean, Text, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
@@ -12,6 +13,7 @@ class Users(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     tg_user_id: Mapped[str] = mapped_column(String)
     username: Mapped[str] = mapped_column(String, nullable=True)
+    tg_username: Mapped[str] = mapped_column(String)
     about_yourself: Mapped[str] = mapped_column(String, nullable=True)
     age: Mapped[str] = mapped_column(String, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
@@ -30,6 +32,7 @@ class Users(Base):
     city: Mapped[str] = mapped_column(String, nullable=True)
     is_admin: Mapped[Boolean] = mapped_column(Boolean, default=False)
     done_questionnaire: Mapped[Boolean] = mapped_column(Boolean, default=False)
+    is_blocked: Mapped[Boolean] = mapped_column(Boolean, default=False)
     date_create: Mapped[DateTime] = mapped_column(DateTime,
                                       default=datetime.datetime.now(datetime.UTC).replace(microsecond=0, tzinfo=None))
     def __str__(self):

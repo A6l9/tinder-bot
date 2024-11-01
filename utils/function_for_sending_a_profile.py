@@ -34,7 +34,8 @@ async def func_for_send_prof(user_id, message):
                                                 desc=description))
             try:
                 await bot.edit_message_media(chat_id=user_id, message_id=temp_storage.profile_message,
-                                             media=media, reply_markup=await create_points_buttons(user_id))
+                                             media=media, reply_markup=await create_points_buttons(user_id,
+                                                                          is_admin=user.is_admin))
             except Exception as exc:
                 logger.debug(f'This exception absolutely normal {exc}')
         elif content[0][0] == 'video':
@@ -55,7 +56,8 @@ async def func_for_send_prof(user_id, message):
                 desc=description))
             try:
                 await bot.edit_message_media(chat_id=user_id, message_id=temp_storage.profile_message,
-                                             media=media, reply_markup=await create_points_buttons(user_id))
+                                             media=media, reply_markup=await create_points_buttons(user_id,
+                                                                          is_admin=user.is_admin))
             except Exception as exc:
                 logger.debug(f'This exception absolutely normal {exc}')
     try:
@@ -90,7 +92,8 @@ async def func_for_send_prof_first_time(user_id, message):
                                      sex=sex,
                                      city=user.city,
                                      desc=description),
-                                 reply_markup=await create_points_buttons(user_id))
+                                 reply_markup=await create_points_buttons(user_id,
+                                                                          is_admin=user.is_admin))
         elif content[0][0] == 'video':
             if user.about_yourself:
                 description = user.about_yourself
@@ -110,7 +113,8 @@ async def func_for_send_prof_first_time(user_id, message):
                                      age=user.age,
                                      city=user.city,
                                      desc=description),
-                                 reply_markup=await create_points_buttons(user_id))
+                                 reply_markup=await create_points_buttons(user_id,
+                                                                          is_admin=user.is_admin))
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
     except:

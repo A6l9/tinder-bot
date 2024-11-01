@@ -21,3 +21,6 @@ class States(StatesGroup):
     edit_age_question = State()
     edit_age_range_search = State()
     edit_preference_search = State()
+    delete_user_profile = State()
+    ban_user_profile = State()
+    mailing = State()

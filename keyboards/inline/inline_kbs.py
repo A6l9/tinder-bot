@@ -8,7 +8,8 @@ from keyboards.buttons import start_button, sex_buttons, \
     add_or_no_buttons, show_my_profile_if_limit_photo_button, sex_buttons_edit, cancel_search_button, \
     change_search_parameters_buttons, search_preference_buttons, pagination_questionnaire_buttons, \
     pagination_questionnaire_buttons_start, pagination_questionnaire_buttons_middle, \
-    pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons, go_to_somewhere
+    pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons, go_to_somewhere, \
+    admin_panel, admin_panel_buttons, close_admin_panel
 from loader import db
 from database.models import Users
 import json
@@ -92,7 +93,7 @@ def create_change_button():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def create_points_buttons(user_id):
+async def create_points_buttons(user_id, is_admin=False):
     temp_storage = user_manager.get_user(user_id)
     user = await db.get_row(Users, tg_user_id=str(user_id))
     temp_storage.photo_storage[user_id] = json.loads(user.media).get('media')
@@ -107,6 +108,8 @@ async def create_points_buttons(user_id):
         builder.row(*pagination_buttons_middle)
     for i_elem in edit_points_buttons:
         builder.row(i_elem)
+    if is_admin:
+        builder.row(*admin_panel)
     return builder.as_markup()
 
 def create_location_edit_buttons():
@@ -205,3 +208,17 @@ def create_go_to_somewhere_buttons():
     builder.row(*go_to_somewhere)
     builder.adjust(1)
     return builder.as_markup()
+
+def create_admin_panel_buttons():
+    builder = InlineKeyboardBuilder()
+    builder.row(*admin_panel_buttons)
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_close_wrap_admin_panel_button():
+    inline_kb_list = [
+        [
+            *close_admin_panel
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

@@ -8,7 +8,7 @@ from loguru import logger
 from database.models import Users, BotReplicas
 from keyboards.inline.inline_kbs import create_points_buttons, create_start_button
 from loader import db, bot, user_manager
-from utils.clear_back import clear_back
+from utils.clear_back import clear_back, clear_back_if_blocked_user
 
 show_router = Router()
 
@@ -19,9 +19,17 @@ async def show_questionnaire(message: Message):
     temp_storage.profile_message = message.message_id + 1
     logger.info('Command show_profile')
     user_data = await db.get_row(Users, tg_user_id=str(message.chat.id))
+    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=message.from_user.username)
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
-    if user_data and user_data.done_questionnaire:
+    if user_data.is_blocked:
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await message.answer(replica.replica, protect_content=True)
+        try:
+            await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        except:
+            ...
+    elif user_data and user_data.done_questionnaire:
         if json.loads(user_data.media).get('media'):
             content = json.loads(user_data.media).get('media')
             if user_data.about_yourself:
@@ -44,7 +52,8 @@ async def show_questionnaire(message: Message):
                                                                  city=user_data.city,
                                                                  desc=description),
                                                                  reply_markup=await create_points_buttons(
-                                                                     message.chat.id))
+                                                                     message.chat.id,
+                                                                          is_admin=user_data.is_admin))
             elif content[temp_storage.num_elem][0] == 'video':
                 if user_data.about_yourself:
                     description = user_data.about_yourself
@@ -65,7 +74,8 @@ async def show_questionnaire(message: Message):
                                                                     city=user_data.city,
                                                                     desc=description),
                                                                     reply_markup=await create_points_buttons(
-                                                                        message.chat.id))
+                                                                        message.chat.id,
+                                                                          is_admin=user_data.is_admin))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
         await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())

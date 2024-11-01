@@ -12,6 +12,8 @@ from keyboards.inline.inline_kbs import create_buttons_cities_edit, \
     create_location_edit_buttons, create_cancel_button, create_delete_or_no_buttons, create_sex_edit_buttons
 from keyboards.reply.reply_kbs import create_share_location_button
 from loguru import logger
+
+from utils.clear_back import clear_back_if_blocked_user
 from utils.haversine import haversine
 from utils.function_for_sending_a_profile import func_for_send_prof
 
@@ -22,26 +24,36 @@ edit_profile_router = Router()
 @edit_profile_router.callback_query(F.data.startswith('edit_'))
 async def change_distributor(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
-    temp_storage.id_message = call.message.message_id
-    point = call.data.split('_')[1]
-    if point == 'name':
-        replica = await db.get_row(BotReplicas, unique_name='new_name')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
-        await state.set_state(States.name_question_edit)
-    elif point == 'city':
-        replica = await db.get_row(BotReplicas, unique_name='city_question')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_location_edit_buttons())
-    elif point == 'description':
-        replica = await db.get_row(BotReplicas, unique_name='write_new_description')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
-        await state.set_state(States.description_question_edit)
-    elif point == 'sex':
-        replica = await db.get_row(BotReplicas, unique_name='sex_question')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_sex_edit_buttons())
-    elif point == 'age':
-        await state.set_state(States.edit_age_question)
-        replica = await db.get_row(BotReplicas, unique_name='age_question')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+    user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
+    if user.is_blocked:
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await call.message.answer(replica.replica, protect_content=True)
+        try:
+            await clear_back_if_blocked_user(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+        except:
+            ...
+    else:
+        temp_storage.id_message = call.message.message_id
+        point = call.data.split('_')[1]
+        if point == 'name':
+            replica = await db.get_row(BotReplicas, unique_name='new_name')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await state.set_state(States.name_question_edit)
+        elif point == 'city':
+            replica = await db.get_row(BotReplicas, unique_name='city_question')
+            await call.message.answer(replica.replica, protect_content=True,
+                                      reply_markup=create_location_edit_buttons())
+        elif point == 'description':
+            replica = await db.get_row(BotReplicas, unique_name='write_new_description')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await state.set_state(States.description_question_edit)
+        elif point == 'sex':
+            replica = await db.get_row(BotReplicas, unique_name='sex_question')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_sex_edit_buttons())
+        elif point == 'age':
+            await state.set_state(States.edit_age_question)
+            replica = await db.get_row(BotReplicas, unique_name='age_question')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
 
 
 @edit_profile_router.callback_query(F.data.startswith('editsex_'))
@@ -189,16 +201,24 @@ async def add_new_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     temp_storage.id_message = call.message.message_id
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    list_media = json.loads(user_data.media).get('media')
-    if len(list_media) == 5:
-        replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-        await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
-                                  reply_markup=create_cancel_button())
-        await state.clear()
+    if user_data.is_blocked:
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await call.message.answer(replica.replica, protect_content=True)
+        try:
+            await clear_back_if_blocked_user(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+        except:
+            ...
     else:
-        replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
-        await state.set_state(States.send_new_photo_or_video)
+        list_media = json.loads(user_data.media).get('media')
+        if len(list_media) == 5:
+            replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
+            await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
+                                      reply_markup=create_cancel_button())
+            await state.clear()
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await state.set_state(States.send_new_photo_or_video)
 
 @edit_profile_router.message(States.send_new_photo_or_video, F.content_type.in_({'photo', 'video', 'video_note'}))
 async def take_new_photo_or_video(message: Message, state: FSMContext):
@@ -275,14 +295,23 @@ async def delete_media_question(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     temp_storage.id_message = call.message.message_id
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    if len(json.loads(user.media).get('media')) > 1:
-        replica = await db.get_row(BotReplicas, unique_name='delete_question')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_delete_or_no_buttons())
-        await state.set_state(States.delete_media)
-    elif len(json.loads(user.media).get('media')) == 1:
-        replica = await db.get_row(BotReplicas, unique_name='cant_delete')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
-        await state.set_state(States.send_media_before_delete)
+    if user.is_blocked:
+        try:
+            await clear_back_if_blocked_user(bot=bot, message=call.message,
+                                             anchor_message=temp_storage.start_message)
+        except:
+            ...
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await call.message.answer(replica.replica, protect_content=True)
+    else:
+        if len(json.loads(user.media).get('media')) > 1:
+            replica = await db.get_row(BotReplicas, unique_name='delete_question')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_delete_or_no_buttons())
+            await state.set_state(States.delete_media)
+        elif len(json.loads(user.media).get('media')) == 1:
+            replica = await db.get_row(BotReplicas, unique_name='cant_delete')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await state.set_state(States.send_media_before_delete)
 
 
 @edit_profile_router.callback_query(States.delete_media, F.data == 'yes')

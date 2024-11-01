@@ -7,6 +7,7 @@ from database.models import BotReplicas, Users
 from loader import db, bot, user_manager
 from aiogram.fsm.context import FSMContext
 from keyboards.inline.inline_kbs import create_search_preference_buttons
+from utils.clear_back import clear_back_if_blocked_user
 from utils.func_for_send_search_parameters import func_for_send_search_parameters
 import re
 from storage.states import States
@@ -17,9 +18,19 @@ change_search_parameters_router = Router()
 
 @change_search_parameters_router.message(Command('change_search_parameters'))
 async def change_search_parameters(message: Message):
+    user = await db.get_row(Users, tg_user_id=str(message.chat.id))
+    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=message.from_user.username)
     temp_storage = user_manager.get_user(message.chat.id)
-    temp_storage.profile_message = 0
-    await func_for_send_search_parameters(message)
+    if user.is_blocked:
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await message.answer(replica.replica, protect_content=True)
+        try:
+            await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        except:
+            ...
+    else:
+        temp_storage.profile_message = 0
+        await func_for_send_search_parameters(message)
 
 
 @change_search_parameters_router.callback_query(F.data == 'change_age_range')

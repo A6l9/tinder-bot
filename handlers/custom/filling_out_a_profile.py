@@ -27,20 +27,24 @@ async def start_completion(call: CallbackQuery, state: FSMContext):
     await db.initial()
     user_lock = await get_user_lock(call.from_user.id)
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({"media": []}),
-                             about_yourself=None)
-    async with user_lock:
-        if not user:
-            try:
-                temp_storage = user_manager.get_user(call.from_user.id)
-                temp_storage.start_message = call.message
-                await db.add_row(Users, tg_user_id=str(call.from_user.id))
-            except Exception as exc:
-                logger.error(exc)
-                await call.message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
-    await state.set_state(States.age_question)
-    replica = await db.get_row(BotReplicas, unique_name='age_question')
-    await call.message.edit_text(replica.replica)
+    if user.is_blocked:
+        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+        await call.message.answer(replica.replica, protect_content=True)
+    else:
+        await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({"media": []}),
+                                 about_yourself=None)
+        async with user_lock:
+            if not user:
+                try:
+                    temp_storage = user_manager.get_user(call.from_user.id)
+                    temp_storage.start_message = call.message
+                    await db.add_row(Users, tg_user_id=str(call.from_user.id))
+                except Exception as exc:
+                    logger.error(exc)
+                    await call.message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
+        await state.set_state(States.age_question)
+        replica = await db.get_row(BotReplicas, unique_name='age_question')
+        await call.message.edit_text(replica.replica)
 
 @profile_router.message(~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}), States.age_question,
                         F.text)

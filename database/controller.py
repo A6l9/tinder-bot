@@ -230,3 +230,21 @@ class BaseInterface:
             cities = result.scalars().all()
             res = [*cities]
             return res
+
+    async def get_users_info(self, model: Any=Users, to_many: bool=True):
+        async with self.async_ses() as session:
+            row_mans = await session.execute(Query(model).filter_by(sex='man'))
+            row_girls = await session.execute(Query(model).filter_by(sex='woman'))
+            row_users = await session.execute(Query(model).filter_by())
+            row_users_nodone_profile = await session.execute(Query(model).filter_by(done_questionnaire=False))
+            if to_many:
+                res = [len([*row_mans.scalars()]), len([*row_girls.scalars()]),
+                       len([*row_users]), len([*row_users_nodone_profile])]
+            return res
+
+    async def get_matches_info(self, model: Any=Matches, to_many: bool=True):
+        async with self.async_ses() as session:
+            row_matches = await session.execute(Query(model).filter_by(user_reaction_one=True, user_reaction_two=True))
+            if to_many:
+                res = [len([*row_matches.scalars()])]
+            return res

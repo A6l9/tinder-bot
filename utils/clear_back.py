@@ -24,3 +24,11 @@ async def clear_back(bot, message, start_num=0, anchor_message=None):
         asyncio.create_task(
             delete_wrap_by_call(bot.delete_message(message.chat.id, message.message_id - i))
         )
+
+async def clear_back_if_blocked_user(bot, message, start_num=0, anchor_message=None):
+    for i in list(range(15))[start_num:]:
+        if anchor_message and message.message_id - i == anchor_message.message_id:
+                continue
+        asyncio.create_task(
+            delete_wrap_by_call(bot.delete_message(message.chat.id, message.message_id - i))
+        )
