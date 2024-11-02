@@ -19,7 +19,7 @@ async def main():
     logger.info('The bot start working')
     dp.include_routers(start_router, profile_router, show_router, edit_profile_router, pagination_router,
                        change_search_parameters_router, show_questionnaire_router, admin_panel_router)
-    # asyncio.create_task(main_send_matches())
+    asyncio.create_task(main_send_matches())
     await dp.start_polling(bot)
     await set_commands()
 
