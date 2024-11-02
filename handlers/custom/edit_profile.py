@@ -335,9 +335,12 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     user_media = json.loads(user.media)['media']
+    user_list_media_url_format = json.loads(user.media_url_format).get('media')
     user_media.pop(temp_storage.num_elem)
+    user_list_media_url_format.pop(temp_storage.num_elem)
     try:
-        await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({'media': user_media}))
+        await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({'media': user_media}),
+                                             media_url_format=json.dumps({'media': user_list_media_url_format}))
         replica = await db.get_row(BotReplicas, unique_name='delete_complete')
         await call.message.answer(replica.replica, protect_content=True,)
         await func_for_send_prof(user_id=call.from_user.id, message=call.message)
