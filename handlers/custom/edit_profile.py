@@ -28,7 +28,7 @@ async def change_distributor(call: CallbackQuery, state: FSMContext):
     user = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if user.is_blocked:
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         try:
             await clear_back_if_blocked_user(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
         except:
@@ -38,23 +38,23 @@ async def change_distributor(call: CallbackQuery, state: FSMContext):
         point = call.data.split('_')[1]
         if point == 'name':
             replica = await db.get_row(BotReplicas, unique_name='new_name')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
             await state.set_state(States.name_question_edit)
         elif point == 'city':
             replica = await db.get_row(BotReplicas, unique_name='city_question')
-            await call.message.answer(replica.replica, protect_content=True,
+            await call.message.answer(replica.replica, protect_content=False,
                                       reply_markup=create_location_edit_buttons())
         elif point == 'description':
             replica = await db.get_row(BotReplicas, unique_name='write_new_description')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
             await state.set_state(States.description_question_edit)
         elif point == 'sex':
             replica = await db.get_row(BotReplicas, unique_name='sex_question')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_sex_edit_buttons())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_sex_edit_buttons())
         elif point == 'age':
             await state.set_state(States.edit_age_question)
             replica = await db.get_row(BotReplicas, unique_name='age_question')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
 
 
 @edit_profile_router.callback_query(F.data.startswith('editsex_'))
@@ -79,7 +79,7 @@ async def age_question_take_answer(message: Message, state: FSMContext):
             logger.error(f'Error updating user age: {exc}')
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_age')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+        await message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
 
 
 @edit_profile_router.callback_query(F.data.startswith('editname_'))
@@ -107,7 +107,7 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
     if type_record_location == 'share':
         try:
             replica = await db.get_row(BotReplicas, unique_name='share_location')
-            await call.message.answer(replica.replica, protect_content=True,
+            await call.message.answer(replica.replica, protect_content=False,
                                       reply_markup=create_share_location_button())
             await state.set_state(States.location_edit_share)
         except Exception as exc:
@@ -115,7 +115,7 @@ async def location_question_take_answer(call: CallbackQuery, state: FSMContext):
     elif type_record_location == 'write':
         try:
             replica = await db.get_row(BotReplicas, unique_name='write_location')
-            await call.message.answer(replica.replica, protect_content=True)
+            await call.message.answer(replica.replica, protect_content=False)
             await state.set_state(States.location_edit_write)
         except Exception as exc:
             logger.error(f'Error take user location: {exc}')
@@ -127,12 +127,12 @@ async def location_write_search_city(message: Message, state: FSMContext):
     cities_matches = await db.search_cities(str(message.text))
     if cities_matches:
         replica = await db.get_row(BotReplicas, unique_name='city_choose')
-        await message.answer(replica.replica, protect_content=True,
+        await message.answer(replica.replica, protect_content=False,
                              reply_markup=create_buttons_cities_edit(cities_matches))
         await state.clear()
     else:
         replica = await db.get_row(BotReplicas, unique_name='city_not_found')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
 
 
 @edit_profile_router.callback_query(F.data.startswith('editcity_'))
@@ -180,7 +180,7 @@ async def edit_location_share_take_answer(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='location_false')
         await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_location_edit_buttons())
+        await message.answer(replica.replica, protect_content=False, reply_markup=create_location_edit_buttons())
 
 @edit_profile_router.message(States.description_question_edit, F.text,
                              ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
@@ -195,7 +195,7 @@ async def edit_about_yourself_get_answer(message: Message, state: FSMContext):
             logger.error(f'Error updating user description: {exc}')
     else:
         replica = await db.get_row(BotReplicas, unique_name='null_description')
-        await message.answer(replica.replica, protect_content=True,)
+        await message.answer(replica.replica, protect_content=False,)
 
 @edit_profile_router.callback_query(F.data == 'add_media')
 async def add_new_media(call: CallbackQuery, state: FSMContext):
@@ -204,7 +204,7 @@ async def add_new_media(call: CallbackQuery, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if user_data.is_blocked:
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         try:
             await clear_back_if_blocked_user(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
         except:
@@ -213,12 +213,12 @@ async def add_new_media(call: CallbackQuery, state: FSMContext):
         list_media = json.loads(user_data.media).get('media')
         if len(list_media) == 5:
             replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-            await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
+            await call.message.answer(replica.replica.replace('|n', '\n'), protect_content=False,
                                       reply_markup=create_cancel_button())
             await state.clear()
         else:
             replica = await db.get_row(BotReplicas, unique_name='send_new_photo_or_video')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
             await state.set_state(States.send_new_photo_or_video)
 
 @edit_profile_router.message(States.send_new_photo_or_video, F.content_type.in_({'photo', 'video', 'video_note'}))
@@ -233,14 +233,14 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             else:
                 await state.update_data({message.media_group_id: True})
                 replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
-                await message.answer(replica.replica, protect_content=True,)
+                await message.answer(replica.replica, protect_content=False,)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
             list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-                await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+                await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
                 await func_for_send_prof(user_id=message.from_user.id, message=message)
                 await state.clear()
             else:
@@ -260,7 +260,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             else:
                 await state.update_data({message.media_group_id: True})
                 replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
-                await message.answer(replica.replica, protect_content=True,)
+                await message.answer(replica.replica, protect_content=False,)
         else:
             if message.video.duration <=15:
                 user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
@@ -268,7 +268,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                 list_media_url_format = json.loads(user_data.media_url_format).get('media')
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-                    await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+                    await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
                     await func_for_send_prof(user_id=message.from_user.id, message=message)
                     await state.clear()
                 else:
@@ -282,13 +282,13 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                     await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
-                await message.answer(replica.replica, protect_content=True,)
+                await message.answer(replica.replica, protect_content=False,)
     elif message.video_note:
         replica = await db.get_row(BotReplicas, unique_name='videonote_warning')
-        await message.answer(replica.replica, protect_content=True,)
+        await message.answer(replica.replica, protect_content=False,)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
-        await message.answer(replica.replica, protect_content=True,)
+        await message.answer(replica.replica, protect_content=False,)
 
 
 @edit_profile_router.message(States.send_new_photo_or_video,
@@ -318,15 +318,15 @@ async def delete_media_question(call: CallbackQuery, state: FSMContext):
         except:
             ...
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
     else:
         if len(json.loads(user.media).get('media')) > 1:
             replica = await db.get_row(BotReplicas, unique_name='delete_question')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_delete_or_no_buttons())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_delete_or_no_buttons())
             await state.set_state(States.delete_media)
         elif len(json.loads(user.media).get('media')) == 1:
             replica = await db.get_row(BotReplicas, unique_name='cant_delete')
-            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_cancel_button())
+            await call.message.answer(replica.replica, protect_content=False, reply_markup=create_cancel_button())
             await state.set_state(States.send_media_before_delete)
 
 
@@ -342,7 +342,7 @@ async def delete_media(call: CallbackQuery, state: FSMContext):
         await db.update_user_row(Users, tg_user_id=str(call.from_user.id), media=json.dumps({'media': user_media}),
                                              media_url_format=json.dumps({'media': user_list_media_url_format}))
         replica = await db.get_row(BotReplicas, unique_name='delete_complete')
-        await call.message.answer(replica.replica, protect_content=True,)
+        await call.message.answer(replica.replica, protect_content=False,)
         await func_for_send_prof(user_id=call.from_user.id, message=call.message)
         await state.clear()
     except Exception as exc:
@@ -359,14 +359,14 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             else:
                 await state.update_data({message.media_group_id: True})
                 replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
-                await message.answer(replica.replica, protect_content=True)
+                await message.answer(replica.replica, protect_content=False)
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
             list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-                await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+                await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
                 await func_for_send_prof(user_id=message.from_user.id, message=message)
                 await state.clear()
             else:
@@ -386,7 +386,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             else:
                 await state.update_data({message.media_group_id: True})
                 replica = await db.get_row(BotReplicas, unique_name='only_one_photo_or_video')
-                await message.answer(replica.replica, protect_content=True)
+                await message.answer(replica.replica, protect_content=False)
         else:
             if message.video.duration <= 15:
                 user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
@@ -394,7 +394,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 list_media_url_format = json.loads(user_data.media_url_format).get('media')
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
-                    await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+                    await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
                     await func_for_send_prof(user_id=message.from_user.id, message=message)
                     await state.clear()
                 else:
@@ -408,13 +408,13 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                     await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_duration')
-                await message.answer(replica.replica, protect_content=True)
+                await message.answer(replica.replica, protect_content=False)
     elif message.video_note:
         replica = await db.get_row(BotReplicas, unique_name='videonote_warning')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
-        await message.answer(replica.replica, protect_content=True,)
+        await message.answer(replica.replica, protect_content=False,)
 
 @edit_profile_router.message(States.send_media_before_delete,
                                   F.content_type.in_({'document', 'voice', 'sticker', 'text'}))

@@ -44,7 +44,7 @@ async def send_questionnaire_first_time(message):
 
                 await bot.send_photo(chat_id=user_data.tg_user_id,
                                      photo=content[0][1],
-                                     protect_content=True,
+                                     protect_content=False,
                                      caption=replica.replica.replace('|n', '\n').format(
                         name=another_user_data.username,
                         age=another_user_data.age,
@@ -59,7 +59,7 @@ async def send_questionnaire_first_time(message):
                     description = 'Нет описания'
                 await bot.send_video(chat_id=user_data.tg_user_id,
                                      video=content[0][1],
-                                     protect_content=True,
+                                     protect_content=False,
                                      caption=replica.replica.replace('|n', '\n').format(
                         name=another_user_data.username,
                         age=another_user_data.age,
@@ -69,14 +69,14 @@ async def send_questionnaire_first_time(message):
                                          user_id=message.chat.id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
-            await message.answer(replica.replica, protect_content=True)
+            await message.answer(replica.replica, protect_content=False)
     elif not user_data.range_age:
         replica = await db.get_row(BotReplicas, unique_name='nodone_parameters')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
     else:
         temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=False, reply_markup=create_start_button())
 
 
 async def send_questionnaire(message):
@@ -122,8 +122,8 @@ async def send_questionnaire(message):
                                          user_id=message.chat.id))
         else:
             replica = await db.get_row(BotReplicas, unique_name='not_available_profiles')
-            await message.answer(replica.replica, protect_content=True)
+            await message.answer(replica.replica, protect_content=False)
     else:
         temp_storage.start_message = message
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=False, reply_markup=create_start_button())

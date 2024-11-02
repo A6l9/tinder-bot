@@ -132,11 +132,11 @@ class SendMatches:
                                             media_group_for_another_user.append(InputMediaVideo(media=elem[1]))
                                     msg = await bot.send_media_group(chat_id=int(another_user.tg_user_id),
                                                          media=media_group_for_another_user,
-                                                         protect_content=True
+                                                         protect_content=False
                                                      )
                                     msg_1 = await bot.send_media_group(chat_id=int(user.tg_user_id),
                                                          media=media_group_for_my_user,
-                                                         protect_content=True
+                                                         protect_content=False
                                                          )
                                     self.tmp_storage.add(i_match.id)
                                     temp_storage_user1 = user_manager.get_user(int(user.tg_user_id))

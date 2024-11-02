@@ -22,7 +22,7 @@ async def admin_panel(call: CallbackQuery, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         await show_questionnaire(call.message)
     else:
         temp_storage = user_manager.get_user(call.from_user.id)
@@ -31,7 +31,7 @@ async def admin_panel(call: CallbackQuery, state: FSMContext):
         except:
             ...
         replica = await db.get_row(BotReplicas, unique_name='admin_panel_message')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_admin_panel_buttons())
+        await call.message.answer(replica.replica, protect_content=False, reply_markup=create_admin_panel_buttons())
 
 
 @admin_panel_router.callback_query(F.data == 'statistics')
@@ -39,7 +39,7 @@ async def statistics(call: CallbackQuery):
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         await show_questionnaire(call.message)
     else:
         replica = await db.get_row(BotReplicas, unique_name='statistic_message')
@@ -50,7 +50,7 @@ async def statistics(call: CallbackQuery):
                                                          mans=users[0],
                                                          woman=users[1],
                                                          matches=matches[0],),
-                                                         protect_content=True,
+                                                         protect_content=False,
                                                          reply_markup=create_close_wrap_admin_panel_button())
 
 
@@ -60,7 +60,7 @@ async def delete_user_profile(call: CallbackQuery, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         await show_questionnaire(call.message)
     else:
         await state.storage.set_data(key=StorageKey(bot_id=call.message.from_user.id,
@@ -68,7 +68,7 @@ async def delete_user_profile(call: CallbackQuery, state: FSMContext):
                                                     chat_id=call.from_user.id),
                                      data={str(call.from_user.id): call})
         replica = await db.get_row(BotReplicas, unique_name='write_user_id_for_delete')
-        await call.message.answer(replica.replica, protect_content=True,
+        await call.message.answer(replica.replica, protect_content=False,
                                   reply_markup=create_close_wrap_admin_panel_button())
         await state.set_state(States.delete_user_profile)
 
@@ -79,7 +79,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
         await show_questionnaire(message)
     else:
         temp_storage = user_manager.get_user(message.from_user.id)
@@ -99,7 +99,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
                 await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
-                await message.answer(replica.replica, protect_content=True,
+                await message.answer(replica.replica, protect_content=False,
                                      reply_markup=create_close_wrap_admin_panel_button())
                 try:
                     await asyncio.sleep(1)
@@ -108,7 +108,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
                     ...
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_type_user_id_delete')
-            await message.answer(replica.replica, protect_content=True,
+            await message.answer(replica.replica, protect_content=False,
                                  reply_markup=create_close_wrap_admin_panel_button())
             try:
                 await asyncio.sleep(1)
@@ -123,7 +123,7 @@ async def ban_user_profile(call: CallbackQuery, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await call.message.answer(replica.replica, protect_content=True)
+        await call.message.answer(replica.replica, protect_content=False)
         await show_questionnaire(call.message)
     else:
         await state.storage.set_data(key=StorageKey(bot_id=call.message.from_user.id,
@@ -131,7 +131,7 @@ async def ban_user_profile(call: CallbackQuery, state: FSMContext):
                                                     chat_id=call.from_user.id),
                                      data={str(call.from_user.id): call})
         replica = await db.get_row(BotReplicas, unique_name='write_user_id_for_ban')
-        await call.message.answer(replica.replica, protect_content=True,
+        await call.message.answer(replica.replica, protect_content=False,
                                   reply_markup=create_close_wrap_admin_panel_button())
         await state.set_state(States.ban_user_profile)
 
@@ -142,7 +142,7 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
     user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
     if not user_data.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
         await show_questionnaire(message)
     else:
         temp_storage = user_manager.get_user(message.from_user.id)
@@ -162,7 +162,7 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
                 await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
-                await message.answer(replica.replica, protect_content=True,
+                await message.answer(replica.replica, protect_content=False,
                                      reply_markup=create_close_wrap_admin_panel_button())
                 try:
                     await asyncio.sleep(1)
@@ -171,7 +171,7 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
                     ...
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_type_user_id_delete')
-            await message.answer(replica.replica, protect_content=True,
+            await message.answer(replica.replica, protect_content=False,
                                  reply_markup=create_close_wrap_admin_panel_button())
             try:
                 await asyncio.sleep(1)

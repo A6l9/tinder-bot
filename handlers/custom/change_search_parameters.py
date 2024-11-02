@@ -24,7 +24,7 @@ async def change_search_parameters(message: Message):
     temp_storage = user_manager.get_user(message.chat.id)
     if user.is_blocked:
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await message.answer(replica.replica, protect_content=True)
+        await message.answer(replica.replica, protect_content=False)
         try:
             await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
         except:
@@ -60,13 +60,13 @@ async def change_age_range_take_answer(message: Message, state: FSMContext):
                 await state.clear()
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_age_range')
-                await message.answer(replica.replica, protect_content=True)
+                await message.answer(replica.replica, protect_content=False)
         else:
             replica = await db.get_row(BotReplicas, unique_name='wrong_type_age_range')
-            await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+            await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type_age_range')
-        await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
+        await message.answer(replica.replica.replace('|n', '\n'), protect_content=False)
 
 
 @change_search_parameters_router.callback_query(F.data == 'change_sex_preference')
