@@ -19,7 +19,8 @@ change_search_parameters_router = Router()
 @change_search_parameters_router.message(Command('change_search_parameters'))
 async def change_search_parameters(message: Message):
     user = await db.get_row(Users, tg_user_id=str(message.chat.id))
-    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=message.from_user.username)
+    user_tg_data = await bot.get_chat(chat_id=message.chat.id)
+    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=user_tg_data.username)
     temp_storage = user_manager.get_user(message.chat.id)
     if user.is_blocked:
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')

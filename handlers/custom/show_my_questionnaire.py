@@ -19,7 +19,8 @@ async def show_questionnaire(message: Message):
     temp_storage.profile_message = message.message_id + 1
     logger.info('Command show_profile')
     user_data = await db.get_row(Users, tg_user_id=str(message.chat.id))
-    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=message.from_user.username)
+    user_tg_data = await bot.get_chat(chat_id=message.chat.id)
+    await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=user_tg_data.username)
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if user_data.is_blocked:

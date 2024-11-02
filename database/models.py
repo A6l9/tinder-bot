@@ -20,6 +20,7 @@ class Users(Base):
     preference: Mapped[str] = mapped_column(String, nullable=True)
     range_age: Mapped[str] = mapped_column(String, nullable=True, default='16-45')
     media: Mapped[JSONB] = mapped_column(JSONB, nullable=True, default=json.dumps({'media': []}))
+    media_url_format: Mapped[JSONB] = mapped_column(JSONB, nullable=True, default=json.dumps({'media': []}))
     address: Mapped[str] = mapped_column(String, nullable=True)
     postal_code: Mapped[BigInteger] = mapped_column(BigInteger, nullable=True)
     country: Mapped[str] = mapped_column(String, nullable=True)

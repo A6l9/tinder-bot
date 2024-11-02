@@ -16,6 +16,7 @@ from loguru import logger
 from utils.clear_back import clear_back_if_blocked_user
 from utils.haversine import haversine
 from utils.function_for_sending_a_profile import func_for_send_prof
+from utils.get_picture import get_picture
 
 
 edit_profile_router = Router()
@@ -236,6 +237,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
+            list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
@@ -244,8 +246,10 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             else:
                 file_id = message.photo[-1].file_id
                 list_media.insert(0, [content_type, file_id])
+                list_media_url_format.insert(0, [content_type, await get_picture(file_id)])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_media}))
+                                         media=json.dumps({'media': list_media}),
+                                         media_url_format=json.dumps({'media': list_media_url_format}))
                 await func_for_send_prof(user_id=message.from_user.id, message=message)
                 await state.clear()
     elif message.video:
@@ -261,6 +265,7 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
             if message.video.duration <=15:
                 user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
                 list_media = json.loads(user_data.media).get('media')
+                list_media_url_format = json.loads(user_data.media_url_format).get('media')
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                     await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
@@ -269,8 +274,10 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
                 else:
                     file_id = message.video.file_id
                     list_media.insert(0, [content_type, file_id])
+                    list_media_url_format.insert(0, [content_type, await get_picture(file_id)])
                     await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                             media=json.dumps({'media': list_media}))
+                                             media=json.dumps({'media': list_media}),
+                                             media_url_format=json.dumps({'media': list_media_url_format}))
                     await func_for_send_prof(user_id=message.from_user.id, message=message)
                     await state.clear()
             else:
@@ -282,6 +289,15 @@ async def take_new_photo_or_video(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica, protect_content=True,)
+
+
+@edit_profile_router.message(States.send_new_photo_or_video,
+                                  F.content_type.in_({'document', 'voice', 'sticker', 'text'}))
+async def send_new_photo_or_video_if_another_type_media(message: Message, state: FSMContext):
+    await state.clear()
+    replica = await db.get_row(BotReplicas, unique_name='wrong_type')
+    await message.answer(replica.replica)
+    await state.set_state(States.send_new_photo_or_video)
 
 
 @edit_profile_router.callback_query(F.data == 'cancel')
@@ -344,6 +360,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
+            list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
@@ -352,8 +369,10 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             else:
                 file_id = message.photo[-1].file_id
                 list_media[0] = [content_type, file_id]
+                list_media_url_format[0] = [content_type, await get_picture(file_id)]
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_media}))
+                                         media=json.dumps({'media': list_media}),
+                                         media_url_format=json.dumps({'media': list_media_url_format}))
                 await func_for_send_prof(user_id=message.from_user.id, message=message)
                 await state.clear()
     elif message.video:
@@ -369,6 +388,7 @@ async def send_media_before_delete(message: Message, state: FSMContext):
             if message.video.duration <= 15:
                 user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
                 list_media = json.loads(user_data.media).get('media')
+                list_media_url_format = json.loads(user_data.media_url_format).get('media')
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                     await message.answer(replica.replica.replace('|n', '\n'), protect_content=True)
@@ -377,8 +397,10 @@ async def send_media_before_delete(message: Message, state: FSMContext):
                 else:
                     file_id = message.video.file_id
                     list_media[0] = [content_type, file_id]
+                    list_media_url_format[0] = [content_type, await get_picture(file_id)]
                     await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                             media=json.dumps({'media': list_media}))
+                                             media=json.dumps({'media': list_media}),
+                                             media_url_format=json.dumps({'media': list_media_url_format}))
                     await func_for_send_prof(user_id=message.from_user.id, message=message)
                     await state.clear()
             else:
@@ -390,3 +412,11 @@ async def send_media_before_delete(message: Message, state: FSMContext):
     else:
         replica = await db.get_row(BotReplicas, unique_name='wrong_type')
         await message.answer(replica.replica, protect_content=True,)
+
+@edit_profile_router.message(States.send_media_before_delete,
+                                  F.content_type.in_({'document', 'voice', 'sticker', 'text'}))
+async def send_media_before_delete_if_another_type_media(message: Message, state: FSMContext):
+    await state.clear()
+    replica = await db.get_row(BotReplicas, unique_name='wrong_type')
+    await message.answer(replica.replica)
+    await state.set_state(States.send_media_before_delete)

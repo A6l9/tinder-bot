@@ -18,6 +18,7 @@ from keyboards.inline.inline_kbs import (create_sex_buttons, create_preference_b
 from keyboards.reply.reply_kbs import create_share_location_button
 from storage.states import States
 from utils.user_lock import get_user_lock
+from utils.get_picture import get_picture
 from loader import bot
 
 profile_router = Router()
@@ -295,6 +296,7 @@ async def take_photo_or_video(message: Message, state: FSMContext):
         else:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
+            list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
@@ -303,8 +305,10 @@ async def take_photo_or_video(message: Message, state: FSMContext):
             else:
                 file_id = message.photo[-1].file_id
                 list_media.insert(0, [content_type, file_id])
+                list_media_url_format.insert(0, [content_type, await get_picture(file_id)])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_media}))
+                                         media=json.dumps({'media': list_media}),
+                                         media_url_format=json.dumps({'media': list_media_url_format}))
                 if len(list_media) == 5:
                     replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                     await message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
@@ -320,6 +324,7 @@ async def take_photo_or_video(message: Message, state: FSMContext):
         if message.video.duration <=15:
             user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
             list_media = json.loads(user_data.media).get('media')
+            list_media_url_format = json.loads(user_data.media_url_format).get('media')
             if len(list_media) == 5:
                 replica = await db.get_row(BotReplicas, unique_name='media_limit_exceeded')
                 await message.answer(replica.replica.replace('|n', '\n'), protect_content=True,
@@ -328,8 +333,10 @@ async def take_photo_or_video(message: Message, state: FSMContext):
             else:
                 file_id = message.video.file_id
                 list_media.insert(0, [content_type, file_id])
+                list_media_url_format.insert(0, [content_type, await get_picture(file_id)])
                 await db.update_user_row(model=Users, tg_user_id=message.from_user.id,
-                                         media=json.dumps({'media': list_media}))
+                                         media=json.dumps({'media': list_media}),
+                                         media_url_format=json.dumps({'media': list_media_url_format}))
                 replica = await db.get_row(BotReplicas, unique_name='add_more_media')
                 await message.answer(replica.replica, protect_content=True, reply_markup=create_add_or_no_buttons())
                 await state.set_state(States.add_or_no_media)
@@ -347,6 +354,13 @@ async def take_photo_or_video(message: Message, state: FSMContext):
     except:
         ...
 
+
+@profile_router.message(States.send_video_or_photo, F.content_type.in_({'document', 'voice', 'sticker', 'text'}))
+async def if_another_type_media(message: Message, state: FSMContext):
+    await state.clear()
+    replica = await db.get_row(BotReplicas, unique_name='wrong_type')
+    await message.answer(replica.replica)
+    await state.set_state(States.send_video_or_photo)
 
 @profile_router.callback_query(States.add_or_no_media, F.data == 'yes_more_media')
 async def yes_add_more_media(call: CallbackQuery, state: FSMContext):

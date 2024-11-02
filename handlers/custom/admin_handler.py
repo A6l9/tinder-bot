@@ -85,7 +85,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
         temp_storage = user_manager.get_user(message.from_user.id)
         if message.text.isdigit():
             user_data = await db.get_row(Users, tg_user_id=message.text)
-            if user_data:
+            if user_data and int(user_data.tg_user_id) != message.from_user.id:
                 await db.delete_rows(Users, tg_user_id=str(message.text))
                 replica = await db.get_row(BotReplicas, unique_name='delete_user_successfully')
                 await message.answer(replica.replica)
