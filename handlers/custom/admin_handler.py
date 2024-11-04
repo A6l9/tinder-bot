@@ -287,7 +287,7 @@ async def location_for_mailing_take_answer(call: CallbackQuery, state: FSMContex
 
 @admin_panel_router.message(States.age_parameter_for_mailing,
                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}), F.text)
-async def take_answer_city_mailing(message: Message, state: FSMContext):
+async def take_answer_age_mailing(message: Message, state: FSMContext):
     state_data = await state.get_data()
     if message.text:
         pattern = r'^\d{2}-\d{2}$'
@@ -295,18 +295,28 @@ async def take_answer_city_mailing(message: Message, state: FSMContext):
         if match:
             if (int(match.group().split('-')[0]) == int(match.group().split('-')[1]) and
                     16 <= int(match.group().split('-')[0]) < 46 and 16 <= int(match.group().split('-')[1]) < 46):
-                parameters = state_data.get('parameters', {})
-                parameters.update(age_range=message.text)
-                await state.update_data(parameters=parameters)
-                replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
-                await message.answer(replica.replica, protect_content=True, reply_markup=create_sex_buttons_mailing())
+                if await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
+                    await message.answer(replica.replica, protect_content=True,
+                                         reply_markup=create_sex_buttons_mailing())
+                else:
+                    replica = await db.get_row(BotReplicas, unique_name='users_with_age_not_found')
+                    await message.answer(replica.replica, protect_content=True)
             elif (16 <= int(match.group().split('-')[0]) < 46 and 16 <= int(match.group().split('-')[1]) < 46
                   and int(match.group().split('-')[0]) < int(match.group().split('-')[1])):
-                parameters = state_data.get('parameters', {})
-                parameters.update(age_range=message.text)
-                await state.update_data(parameters=parameters)
-                replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
-                await message.answer(replica.replica, protect_content=True, reply_markup=create_sex_buttons_mailing())
+                if await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
+                    await message.answer(replica.replica, protect_content=True,
+                                         reply_markup=create_sex_buttons_mailing())
+                else:
+                    replica = await db.get_row(BotReplicas, unique_name='users_with_age_not_found')
+                    await message.answer(replica.replica, protect_content=True)
             else:
                 replica = await db.get_row(BotReplicas, unique_name='wrong_age_range')
                 await message.answer(replica.replica, protect_content=True)
@@ -319,7 +329,7 @@ async def take_answer_city_mailing(message: Message, state: FSMContext):
 async def take_answer_sex_mailing(call: CallbackQuery, state: FSMContext):
     sex = call.data.split('_')[2]
     state_data = await state.get_data()
-    if await db.get_row(Users, to_many=True, sex=sex) or sex == 'no':
+    if await db.get_row(Users, to_many=True, sex=sex, address=state_data['parameters']['city']) or sex == 'no':
         parameters = state_data.get('parameters', {})
         parameters.update(sex=sex)
         await state.update_data(parameters=parameters)

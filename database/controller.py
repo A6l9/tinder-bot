@@ -1,7 +1,7 @@
 from typing import Iterable, List
 
 from loguru import logger
-from sqlalchemy import Select, update, select
+from sqlalchemy import Select, update, select, between
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.ddl import DropTable
@@ -255,6 +255,17 @@ class BaseInterface:
             result = await session.execute(query)
             cities = result.scalars().all()
             res = [*cities]
+            return res
+
+    async def get_users_with_age(self, age_range: str, address: str):
+        start_age = str(age_range.split('-')[0])
+        end_age = str(age_range.split('-')[1])
+        async with self.async_ses() as session:
+            query = select(Users).where(Users.done_questionnaire == True,
+                                        Users.age.between(start_age, end_age), Users.address == address)
+            result = await session.execute(query)
+            users = result.scalars().all()
+            res = [*users]
             return res
 
     async def get_users_for_mailing(self, parameters):
