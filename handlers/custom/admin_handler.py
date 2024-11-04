@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 
 from aiogram import Router, F
@@ -8,12 +9,12 @@ from aiogram.fsm.context import FSMContext
 from database.models import BotReplicas, Users, Matches, Cities
 from loader import db, bot, user_manager
 from keyboards.inline.inline_kbs import create_admin_panel_buttons, create_close_wrap_admin_panel_button, \
-    create_buttons_cities_mailing, create_sex_buttons_mailing
+    create_buttons_cities_mailing, create_sex_buttons_mailing, create_buttons_for_ban_profile, \
+    create_buttons_for_delete_profile
 from handlers.custom.show_my_questionnaire import show_questionnaire
 from utils.clear_back import clear_back
 from storage.states import States
-from aiogram.fsm.storage.base import StorageKey
-
+from loguru import logger
 from utils.extra_tools import CustomCall
 from utils.func_for_mailing import Disturb
 
@@ -24,18 +25,21 @@ admin_panel_router = Router()
 async def admin_panel(call: CallbackQuery, state: FSMContext):
     await state.clear()
     user_data = await db.get_row(Users, tg_user_id=str(call.from_user.id))
-    if not user_data.is_admin:
-        replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
-        await call.message.answer(replica.replica, protect_content=True)
-        await show_questionnaire(call.message)
-    else:
-        temp_storage = user_manager.get_user(call.from_user.id)
-        try:
-            await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-        except:
-            ...
-        replica = await db.get_row(BotReplicas, unique_name='admin_panel_message')
-        await call.message.answer(replica.replica, protect_content=True, reply_markup=create_admin_panel_buttons())
+    try:
+        if not user_data.is_admin:
+            replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
+            await call.message.answer(replica.replica, protect_content=True)
+            await show_questionnaire(call.message)
+        else:
+            temp_storage = user_manager.get_user(call.from_user.id)
+            try:
+                await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+            except:
+                ...
+            replica = await db.get_row(BotReplicas, unique_name='admin_panel_message')
+            await call.message.answer(replica.replica, protect_content=True, reply_markup=create_admin_panel_buttons())
+    except Exception as exc:
+        logger.exception(f'Exception {exc}')
 
 
 @admin_panel_router.callback_query(F.data == 'statistics')
@@ -67,10 +71,6 @@ async def delete_user_profile(call: CallbackQuery, state: FSMContext):
         await call.message.answer(replica.replica, protect_content=True)
         await show_questionnaire(call.message)
     else:
-        await state.storage.set_data(key=StorageKey(bot_id=call.message.from_user.id,
-                                                    user_id=call.from_user.id,
-                                                    chat_id=call.from_user.id),
-                                     data={str(call.from_user.id): call})
         replica = await db.get_row(BotReplicas, unique_name='write_user_id_for_delete')
         await call.message.answer(replica.replica, protect_content=True,
                                   reply_markup=create_close_wrap_admin_panel_button())
@@ -87,31 +87,60 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
         await show_questionnaire(message)
     else:
         temp_storage = user_manager.get_user(message.from_user.id)
-        if message.text.isdigit():
-            user_data = await db.get_row(Users, tg_user_id=message.text)
-            if user_data and int(user_data.tg_user_id) != message.from_user.id:
-                await db.delete_rows(Users, tg_user_id=str(message.text))
-                replica = await db.get_row(BotReplicas, unique_name='delete_user_successfully')
-                await message.answer(replica.replica)
-                await asyncio.sleep(2)
-                call = await state.get_data()
-                await admin_panel(call[str(message.from_user.id)], state)
-                try:
-                    await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-                except:
-                    ...
-                await state.clear()
-            else:
-                replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
-                await message.answer(replica.replica, protect_content=True,
-                                     reply_markup=create_close_wrap_admin_panel_button())
-                try:
-                    await asyncio.sleep(1)
-                    await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-                except:
-                    ...
+        if message.text.startswith('@'):
+            username = message.text[1:]
+            user_data = await db.get_row(Users, tg_username=username)
         else:
-            replica = await db.get_row(BotReplicas, unique_name='wrong_type_user_id_delete')
+            username = message.text
+            user_data = await db.get_row(Users, tg_username=username)
+        if user_data and user_data.done_questionnaire:
+            user_tg_id = {'user_tg_id': user_data.tg_user_id}
+            await state.update_data(user_tg_id)
+            replica = await db.get_row(BotReplicas, unique_name='show_profile')
+            if json.loads(user_data.media).get('media'):
+                content = json.loads(user_data.media).get('media')
+                if user_data.about_yourself:
+                    description = user_data.about_yourself
+                else:
+                    description = 'Нет описания'
+                if content[temp_storage.num_elem][0] == 'photo':
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_photo(chat_id=message.chat.id,
+                                         photo=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             sex=sex,
+                                             city=user_data.city,
+                                             desc=description),
+                                         reply_markup=create_buttons_for_delete_profile())
+                elif content[temp_storage.num_elem][0] == 'video':
+                    if user_data.about_yourself:
+                        description = user_data.about_yourself
+                    else:
+                        description = 'Нет описания'
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_video(chat_id=message.chat.id,
+                                         video=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             sex=sex,
+                                             city=user_data.city,
+                                             desc=description),
+                                         reply_markup=create_buttons_for_delete_profile())
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
             await message.answer(replica.replica, protect_content=True,
                                  reply_markup=create_close_wrap_admin_panel_button())
             try:
@@ -130,10 +159,6 @@ async def ban_user_profile(call: CallbackQuery, state: FSMContext):
         await call.message.answer(replica.replica, protect_content=True)
         await show_questionnaire(call.message)
     else:
-        await state.storage.set_data(key=StorageKey(bot_id=call.message.from_user.id,
-                                                    user_id=call.from_user.id,
-                                                    chat_id=call.from_user.id),
-                                     data={str(call.from_user.id): call})
         replica = await db.get_row(BotReplicas, unique_name='write_user_id_for_ban')
         await call.message.answer(replica.replica, protect_content=True,
                                   reply_markup=create_close_wrap_admin_panel_button())
@@ -150,31 +175,60 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
         await show_questionnaire(message)
     else:
         temp_storage = user_manager.get_user(message.from_user.id)
-        if message.text.isdigit():
-            user_data = await db.get_row(Users, tg_user_id=message.text)
-            if user_data:
-                await db.update_user_row(Users, tg_user_id=str(message.text), is_blocked=True)
-                replica = await db.get_row(BotReplicas, unique_name='ban_user_successfully')
-                await message.answer(replica.replica)
-                await asyncio.sleep(2)
-                call = await state.get_data()
-                await admin_panel(call[str(message.from_user.id)], state)
-                try:
-                    await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-                except:
-                    ...
-                await state.clear()
-            else:
-                replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
-                await message.answer(replica.replica, protect_content=True,
-                                     reply_markup=create_close_wrap_admin_panel_button())
-                try:
-                    await asyncio.sleep(1)
-                    await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-                except:
-                    ...
+        if message.text.startswith('@'):
+            username = message.text[1:]
+            user_data = await db.get_row(Users, tg_username=username)
         else:
-            replica = await db.get_row(BotReplicas, unique_name='wrong_type_user_id_delete')
+            username = message.text
+            user_data = await db.get_row(Users, tg_username=username)
+        if user_data and user_data.done_questionnaire:
+            user_tg_id = {'user_tg_id': user_data.tg_user_id}
+            await state.update_data(user_tg_id)
+            replica = await db.get_row(BotReplicas, unique_name='show_profile')
+            if json.loads(user_data.media).get('media'):
+                content = json.loads(user_data.media).get('media')
+                if user_data.about_yourself:
+                    description = user_data.about_yourself
+                else:
+                    description = 'Нет описания'
+                if content[temp_storage.num_elem][0] == 'photo':
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_photo(chat_id=message.chat.id,
+                                         photo=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             sex=sex,
+                                             city=user_data.city,
+                                             desc=description),
+                                         reply_markup=create_buttons_for_ban_profile())
+                elif content[temp_storage.num_elem][0] == 'video':
+                    if user_data.about_yourself:
+                        description = user_data.about_yourself
+                    else:
+                        description = 'Нет описания'
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_video(chat_id=message.chat.id,
+                                         video=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                             name=user_data.username,
+                                             age=user_data.age,
+                                             sex=sex,
+                                             city=user_data.city,
+                                             desc=description),
+                                         reply_markup=create_buttons_for_ban_profile())
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='no_user_with_this_id_delete')
             await message.answer(replica.replica, protect_content=True,
                                  reply_markup=create_close_wrap_admin_panel_button())
             try:
@@ -182,6 +236,59 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
                 await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
             except:
                 ...
+        try:
+            await asyncio.sleep(1)
+            await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
+        except:
+            ...
+
+
+@admin_panel_router.callback_query(F.data == 'ban_user_profile')
+async def yes_ban_user_profile(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    state_data = await state.get_data()
+    user_tg_id = state_data.get('user_tg_id')
+    await db.update_user_row(Users, tg_user_id=user_tg_id, is_blocked=True)
+    replica = await db.get_row(BotReplicas, unique_name='ban_user_successfully')
+    await call.message.answer(replica.replica)
+    await asyncio.sleep(2)
+    await admin_panel(call, state)
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
+
+
+@admin_panel_router.callback_query(F.data == 'yes_delete_user_profile')
+async def yes_delete_user_profile(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    state_data = await state.get_data()
+    user_tg_id = state_data.get('user_tg_id')
+    await db.delete_rows(Users, tg_user_id=user_tg_id)
+    replica = await db.get_row(BotReplicas, unique_name='delete_user_successfully')
+    await call.message.answer(replica.replica)
+    await asyncio.sleep(2)
+    await admin_panel(call, state)
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
+    await state.clear()
+
+
+@admin_panel_router.callback_query(F.data == 'write_username_again_delete')
+async def write_username_again_delete(call: CallbackQuery, state: FSMContext):
+    await state.set_state(States.delete_user_profile)
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    await delete_user_profile(call, state)
+
+
+@admin_panel_router.callback_query(F.data == 'write_username_again_ban')
+async def write_username_again_ban(call: CallbackQuery, state: FSMContext):
+    await state.set_state(States.ban_user_profile)
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    await ban_user_profile(call, state)
+
 
 
 @admin_panel_router.message(States.mailing, ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}),
@@ -255,7 +362,7 @@ async def admin_distrub(call: CustomCall, state: FSMContext):
 
 @admin_panel_router.message(States.city_parameter_for_mailing,
                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}), F.text)
-async def write_city_mailing(message: Message, state: FSMContext):
+async def write_city_mailing(message: Message):
     city_matches = await db.search_cities(message.text)
     if city_matches:
         replica = await db.get_row(BotReplicas, unique_name='city_choose')

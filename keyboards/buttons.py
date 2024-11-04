@@ -372,3 +372,25 @@ sex_mailing_button = (
     callback_data='mailing_sex_no'
     )
 )
+
+buttons_for_delete_user = (
+    InlineKeyboardButton(
+        text='Да, удалить его',
+        callback_data='yes_delete_user_profile'
+    ),
+    InlineKeyboardButton(
+        text='Нет, это не он, написать заново',
+        callback_data='write_username_again_delete'
+    )
+)
+
+buttons_for_ban_user = (
+    InlineKeyboardButton(
+        text='Да, заблокировать его',
+        callback_data='ban_user_profile'
+    ),
+    InlineKeyboardButton(
+        text='Нет, это не он, написать заново',
+        callback_data='write_username_again_ban'
+    )
+)

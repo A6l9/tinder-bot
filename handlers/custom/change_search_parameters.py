@@ -6,7 +6,7 @@ from loguru import logger
 from database.models import BotReplicas, Users
 from loader import db, bot, user_manager
 from aiogram.fsm.context import FSMContext
-from keyboards.inline.inline_kbs import create_search_preference_buttons
+from keyboards.inline.inline_kbs import create_search_preference_buttons, create_start_button
 from utils.clear_back import clear_back_if_blocked_user
 from utils.func_for_send_search_parameters import func_for_send_search_parameters
 import re
@@ -22,16 +22,24 @@ async def change_search_parameters(message: Message):
     user_tg_data = await bot.get_chat(chat_id=message.chat.id)
     await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=user_tg_data.username)
     temp_storage = user_manager.get_user(message.chat.id)
-    if user.is_blocked:
-        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await message.answer(replica.replica, protect_content=True)
-        try:
-            await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
-        except:
-            ...
-    else:
-        temp_storage.profile_message = 0
-        await func_for_send_search_parameters(message)
+    try:
+        if user.is_blocked:
+            replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+            await message.answer(replica.replica, protect_content=True)
+            try:
+                await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
+            except:
+                ...
+        else:
+            temp_storage.profile_message = 0
+            await func_for_send_search_parameters(message)
+    except Exception:
+        if not user:
+            await db.add_row(Users, tg_user_id=str(message.from_user.id),
+                             tg_username=user_tg_data.username)
+            replica = await db.get_row(BotReplicas, unique_name='start_message')
+            await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
+
 
 
 @change_search_parameters_router.callback_query(F.data == 'change_age_range')

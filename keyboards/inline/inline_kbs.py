@@ -9,7 +9,8 @@ from keyboards.buttons import start_button, sex_buttons, \
     change_search_parameters_buttons, search_preference_buttons, pagination_questionnaire_buttons, \
     pagination_questionnaire_buttons_start, pagination_questionnaire_buttons_middle, \
     pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons, go_to_somewhere, \
-    admin_panel, admin_panel_buttons, close_admin_panel, sex_mailing_button
+    admin_panel, admin_panel_buttons, close_admin_panel, sex_mailing_button, buttons_for_delete_user, \
+    buttons_for_ban_user
 from loader import db
 from database.models import Users
 import json
@@ -240,5 +241,17 @@ def create_buttons_cities_mailing(list_cities):
 def create_sex_buttons_mailing():
     builder = InlineKeyboardBuilder()
     builder.row(*sex_mailing_button)
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_buttons_for_delete_profile():
+    builder = InlineKeyboardBuilder()
+    builder.row(*buttons_for_delete_user)
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_buttons_for_ban_profile():
+    builder = InlineKeyboardBuilder()
+    builder.row(*buttons_for_ban_user)
     builder.adjust(1)
     return builder.as_markup()

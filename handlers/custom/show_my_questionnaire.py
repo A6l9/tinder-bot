@@ -23,63 +23,70 @@ async def show_questionnaire(message: Message):
     await db.update_user_row(Users, tg_user_id=str(message.chat.id), tg_username=user_tg_data.username)
     content = None
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
-    if user_data.is_blocked:
-        replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await message.answer(replica.replica, protect_content=True)
-        try:
-            await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
-        except:
-            ...
-    elif user_data and user_data.done_questionnaire:
-        if json.loads(user_data.media).get('media'):
-            content = json.loads(user_data.media).get('media')
-            if user_data.about_yourself:
-                description = user_data.about_yourself
-            else:
-                description = 'Нет описания'
-            if content[temp_storage.num_elem][0] == 'photo':
-                sex = None
-                if user_data.sex == 'man':
-                    sex = 'Мужской'
-                elif user_data.sex == 'woman':
-                    sex = 'Женский'
-                await bot.send_photo(chat_id=message.chat.id,
-                                photo=content[temp_storage.num_elem][1],
-                                     protect_content=True,
-                                     caption=replica.replica.replace('|n', '\n').format(
-                                                                 name=user_data.username,
-                                                                 age=user_data.age,
-                                                                 sex=sex,
-                                                                 city=user_data.city,
-                                                                 desc=description),
-                                                                 reply_markup=await create_points_buttons(
-                                                                     message.chat.id,
-                                                                          is_admin=user_data.is_admin))
-            elif content[temp_storage.num_elem][0] == 'video':
+    try:
+        if user_data.is_blocked:
+            replica = await db.get_row(BotReplicas, unique_name='is_blocked')
+            await message.answer(replica.replica, protect_content=True)
+            try:
+                await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
+            except:
+                ...
+        elif user_data and user_data.done_questionnaire:
+            if json.loads(user_data.media).get('media'):
+                content = json.loads(user_data.media).get('media')
                 if user_data.about_yourself:
                     description = user_data.about_yourself
                 else:
                     description = 'Нет описания'
-                sex = None
-                if user_data.sex == 'man':
-                    sex = 'Мужской'
-                elif user_data.sex == 'woman':
-                    sex = 'Женский'
-                await bot.send_video(chat_id=message.chat.id,
-                                     video=content[temp_storage.num_elem][1],
-                                     protect_content=True,
-                                     caption=replica.replica.replace('|n', '\n').format(
-                                                                    name=user_data.username,
-                                                                    age=user_data.age,
-                                                                    sex=sex,
-                                                                    city=user_data.city,
-                                                                    desc=description),
-                                                                    reply_markup=await create_points_buttons(
-                                                                        message.chat.id,
-                                                                          is_admin=user_data.is_admin))
-    else:
-        replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
+                if content[temp_storage.num_elem][0] == 'photo':
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_photo(chat_id=message.chat.id,
+                                    photo=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                                                     name=user_data.username,
+                                                                     age=user_data.age,
+                                                                     sex=sex,
+                                                                     city=user_data.city,
+                                                                     desc=description),
+                                                                     reply_markup=await create_points_buttons(
+                                                                         message.chat.id,
+                                                                              is_admin=user_data.is_admin))
+                elif content[temp_storage.num_elem][0] == 'video':
+                    if user_data.about_yourself:
+                        description = user_data.about_yourself
+                    else:
+                        description = 'Нет описания'
+                    sex = None
+                    if user_data.sex == 'man':
+                        sex = 'Мужской'
+                    elif user_data.sex == 'woman':
+                        sex = 'Женский'
+                    await bot.send_video(chat_id=message.chat.id,
+                                         video=content[temp_storage.num_elem][1],
+                                         protect_content=True,
+                                         caption=replica.replica.replace('|n', '\n').format(
+                                                                        name=user_data.username,
+                                                                        age=user_data.age,
+                                                                        sex=sex,
+                                                                        city=user_data.city,
+                                                                        desc=description),
+                                                                        reply_markup=await create_points_buttons(
+                                                                            message.chat.id,
+                                                                              is_admin=user_data.is_admin))
+        else:
+            replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
+            await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
+    except Exception:
+        if not user_data:
+            await db.add_row(Users, tg_user_id=str(message.from_user.id),
+                             tg_username=user_tg_data.username)
+            replica = await db.get_row(BotReplicas, unique_name='start_message')
+            await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
 
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
