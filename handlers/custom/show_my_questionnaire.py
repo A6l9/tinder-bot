@@ -25,7 +25,7 @@ async def show_questionnaire(message: Message):
     replica = await db.get_row(BotReplicas, unique_name='show_profile')
     if user_data.is_blocked:
         replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-        await message.answer(replica.replica, protect_content=False)
+        await message.answer(replica.replica, protect_content=True)
         try:
             await clear_back_if_blocked_user(bot=bot, message=message, anchor_message=temp_storage.start_message)
         except:
@@ -45,7 +45,7 @@ async def show_questionnaire(message: Message):
                     sex = 'Женский'
                 await bot.send_photo(chat_id=message.chat.id,
                                 photo=content[temp_storage.num_elem][1],
-                                     protect_content=False,
+                                     protect_content=True,
                                      caption=replica.replica.replace('|n', '\n').format(
                                                                  name=user_data.username,
                                                                  age=user_data.age,
@@ -67,7 +67,7 @@ async def show_questionnaire(message: Message):
                     sex = 'Женский'
                 await bot.send_video(chat_id=message.chat.id,
                                      video=content[temp_storage.num_elem][1],
-                                     protect_content=False,
+                                     protect_content=True,
                                      caption=replica.replica.replace('|n', '\n').format(
                                                                     name=user_data.username,
                                                                     age=user_data.age,
@@ -79,7 +79,7 @@ async def show_questionnaire(message: Message):
                                                                           is_admin=user_data.is_admin))
     else:
         replica = await db.get_row(BotReplicas, unique_name='nodone_questionnaire')
-        await message.answer(replica.replica, protect_content=False, reply_markup=create_start_button())
+        await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
 
     try:
         await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)

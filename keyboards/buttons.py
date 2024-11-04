@@ -357,3 +357,18 @@ close_admin_panel = (
         callback_data='close_wrap_admin_panel'
     ),
 )
+
+sex_mailing_button = (
+    InlineKeyboardButton(
+    text='Парням',
+    callback_data='mailing_sex_man'
+    ),
+    InlineKeyboardButton(
+    text='Девушкам',
+    callback_data='mailing_sex_woman'
+    ),
+    InlineKeyboardButton(
+    text='Всем',
+    callback_data='mailing_sex_no'
+    )
+)

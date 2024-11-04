@@ -85,7 +85,7 @@ async def func_for_send_prof_first_time(user_id, message):
                 sex = 'Женский'
             await bot.send_photo(chat_id=user_id,
                                  photo=content[0][1],
-                                 protect_content=False,
+                                 protect_content=True,
                                  caption=replica.replica.replace('|n', '\n').format(
                                      name=user.username,
                                      age=user.age,
@@ -106,7 +106,7 @@ async def func_for_send_prof_first_time(user_id, message):
                 sex = 'Женский'
             await bot.send_video(chat_id=user_id,
                                  video=content[0][1],
-                                 protect_content=False,
+                                 protect_content=True,
                                  caption=replica.replica.replace('|n', '\n').format(
                                      name=user.username,
                                      sex=sex,

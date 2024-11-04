@@ -24,3 +24,6 @@ class States(StatesGroup):
     delete_user_profile = State()
     ban_user_profile = State()
     mailing = State()
+    sex_parameter_for_mailing = State()
+    age_parameter_for_mailing = State()
+    city_parameter_for_mailing = State()

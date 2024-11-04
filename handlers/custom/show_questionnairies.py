@@ -24,7 +24,7 @@ async def swipe_right_photo(call: CallbackQuery):
     async with user_lock:
         if user_data.is_blocked:
             replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-            await call.message.answer(replica.replica, protect_content=False)
+            await call.message.answer(replica.replica, protect_content=True)
             try:
                 await clear_back_if_blocked_user(bot=bot, message=call.message,
                                                  anchor_message=temp_storage.start_message)
@@ -86,7 +86,7 @@ async def swipe_left_photo(call: CallbackQuery):
     async with user_lock:
         if user_data.is_blocked:
             replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-            await call.message.answer(replica.replica, protect_content=False)
+            await call.message.answer(replica.replica, protect_content=True)
             try:
                 await clear_back_if_blocked_user(bot=bot, message=call.message,
                                                  anchor_message=temp_storage.start_message)
@@ -143,7 +143,7 @@ async def like_questionnaire(call: CallbackQuery):
     async with user_lock:
         if user_data.is_blocked:
             replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-            await call.message.answer(replica.replica, protect_content=False)
+            await call.message.answer(replica.replica, protect_content=True)
             try:
                 await clear_back_if_blocked_user(bot=bot, message=call.message,
                                                  anchor_message=temp_storage.start_message)
@@ -184,7 +184,7 @@ async def dislike_questionnaire(call: CallbackQuery):
     async with user_lock:
         if user_data.is_blocked:
             replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-            await call.message.answer(replica.replica, protect_content=False)
+            await call.message.answer(replica.replica, protect_content=True)
             try:
                 await clear_back_if_blocked_user(bot=bot, message=call.message,
                                                  anchor_message=temp_storage.start_message)

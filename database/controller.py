@@ -248,3 +248,29 @@ class BaseInterface:
             if to_many:
                 res = [len([*row_matches.scalars()])]
             return res
+
+    async def get_users_with_city(self, postal_code: int):
+        async with self.async_ses() as session:
+            query = select(Users).where(Users.done_questionnaire == True, Users.postal_code == postal_code)
+            result = await session.execute(query)
+            cities = result.scalars().all()
+            res = [*cities]
+            return res
+
+    async def get_users_for_mailing(self, parameters):
+        async with self.async_ses() as session:
+            start_age = int(parameters['age_range'].split('-')[0]) - 1
+            end_age = int(parameters['age_range'].split('-')[1]) + 1
+            sex_list = ['man', 'woman']
+            if parameters['sex'] in sex_list:
+                query = select(Users).where(Users.done_questionnaire == True,
+                                Users.address == parameters['city'], Users.age.between(str(start_age), str(end_age)),
+                                Users.sex == parameters['sex'])
+            else:
+                query = select(Users).where(Users.done_questionnaire == True,
+                                Users.address == parameters['city'], Users.age.between(str(start_age), str(end_age)),
+                                Users.sex.in_(sex_list))
+            result = await session.execute(query)
+            users = result.scalars().all()
+            res = [*users]
+            return res

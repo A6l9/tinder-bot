@@ -18,11 +18,11 @@ async def start(message: Message):
     temp_storage = user_manager.get_user(message.chat.id)
     logger.info('Command start')
     await db.initial()
-    user = await db.get_row(Users, tg_user_id=str(message.chat.id))
     if not message.reply_markup:
         temp_storage.start_message = message
     user_lock = await get_user_lock(message.chat.id)
     async with user_lock:
+        user = await db.get_row(Users, tg_user_id=str(message.chat.id))
         temp_storage.profile_message = 0
         if not user:
             if message.from_user.username:
@@ -32,16 +32,16 @@ async def start(message: Message):
                     await db.add_row(Users, tg_user_id=str(message.from_user.id),
                                      tg_username=user_tg_data.username)
                     replica = await db.get_row(BotReplicas, unique_name='start_message')
-                    await message.answer(replica.replica, protect_content=False, reply_markup=create_start_button())
+                    await message.answer(replica.replica, protect_content=True, reply_markup=create_start_button())
                 except Exception as exc:
                     logger.error(exc)
-                    await message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=False)
+                    await message.answer('Произошла ошибка, попробуйте еще раз!', protect_content=True)
             else:
                 replica = await db.get_row(BotReplicas, unique_name='no_tg_username')
-                await message.answer(replica.replica, protect_content=False)
+                await message.answer(replica.replica, protect_content=True)
         elif user.is_blocked:
             replica = await db.get_row(BotReplicas, unique_name='is_blocked')
-            await message.answer(replica.replica, protect_content=False)
+            await message.answer(replica.replica, protect_content=True)
             try:
                 await clear_back_if_blocked_user(bot=bot, message=message,
                                                  anchor_message=temp_storage.start_message)
