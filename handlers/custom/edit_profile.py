@@ -72,7 +72,7 @@ async def sex_question_take_answer(call: CallbackQuery):
 async def age_question_take_answer(message: Message, state: FSMContext):
     if message.text.isdigit() and 16 <= int(message.text) < 46:
         try:
-            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=str(message.text))
+            await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=int(message.text))
             await func_for_send_prof(user_id=message.from_user.id, message=message)
             await state.clear()
         except Exception as exc:

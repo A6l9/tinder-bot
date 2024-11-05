@@ -54,7 +54,7 @@ async def age_question_take_answer(message: Message, state: FSMContext):
     if message.text:
         if message.text.isdigit() and 16 <= int(message.text) < 46:
             try:
-                await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=str(message.text))
+                await db.update_user_row(model=Users, tg_user_id=message.from_user.id, age=int(message.text))
                 replica = await db.get_row(BotReplicas, unique_name='sex_question')
                 await message.answer(replica.replica, protect_content=True, reply_markup=create_sex_buttons())
                 await state.clear()
