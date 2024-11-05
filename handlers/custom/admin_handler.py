@@ -10,7 +10,7 @@ from database.models import BotReplicas, Users, Matches, Cities
 from loader import db, bot, user_manager
 from keyboards.inline.inline_kbs import create_admin_panel_buttons, create_close_wrap_admin_panel_button, \
     create_buttons_cities_mailing, create_sex_buttons_mailing, create_buttons_for_ban_profile, \
-    create_buttons_for_delete_profile
+    create_buttons_for_delete_profile, create_buttons_parameters_mailing, create_close_parameter_button
 from handlers.custom.show_my_questionnaire import show_questionnaire
 from utils.clear_back import clear_back
 from storage.states import States
@@ -80,8 +80,8 @@ async def delete_user_profile(call: CallbackQuery, state: FSMContext):
 @admin_panel_router.message(States.delete_user_profile,
                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def get_user_if_for_delete(message: Message, state: FSMContext):
-    user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-    if not user_data.is_admin:
+    user = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+    if not user.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
         await message.answer(replica.replica, protect_content=True)
         await show_questionnaire(message)
@@ -93,7 +93,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
         else:
             username = message.text
             user_data = await db.get_row(Users, tg_username=username)
-        if user_data and user_data.done_questionnaire:
+        if user_data and user_data.done_questionnaire and user_data.tg_user_id != user.tg_user_id:
             user_tg_id = {'user_tg_id': user_data.tg_user_id}
             await state.update_data(user_tg_id)
             replica = await db.get_row(BotReplicas, unique_name='show_profile')
@@ -168,8 +168,8 @@ async def ban_user_profile(call: CallbackQuery, state: FSMContext):
 @admin_panel_router.message(States.ban_user_profile,
                             ~F.text.in_({'/start', '/show_my_profile', '/change_search_parameters'}))
 async def get_user_if_for_ban(message: Message, state: FSMContext):
-    user_data = await db.get_row(Users, tg_user_id=str(message.from_user.id))
-    if not user_data.is_admin:
+    user = await db.get_row(Users, tg_user_id=str(message.from_user.id))
+    if not user.is_admin:
         replica = await db.get_row(BotReplicas, unique_name='is_not_admin')
         await message.answer(replica.replica, protect_content=True)
         await show_questionnaire(message)
@@ -181,7 +181,7 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
         else:
             username = message.text
             user_data = await db.get_row(Users, tg_username=username)
-        if user_data and user_data.done_questionnaire:
+        if user_data and user_data.done_questionnaire and user_data.tg_user_id != user.tg_user_id:
             user_tg_id = {'user_tg_id': user_data.tg_user_id}
             await state.update_data(user_tg_id)
             replica = await db.get_row(BotReplicas, unique_name='show_profile')
@@ -351,13 +351,72 @@ async def admin_distrub(call: CustomCall, state: FSMContext):
             await state.clear()
             text = 'Рассылка началась. По окончании рассылки вам придет уведомление'
         else:
-            replica = await db.get_row(BotReplicas, unique_name='write_city_mailing')
+            replica = await db.get_row(BotReplicas, unique_name='parameters_mailing')
             await state.set_state(States.city_parameter_for_mailing)
-            return await call.message.answer(replica.replica, protect_content=True,
-                                             reply_markup=create_close_wrap_admin_panel_button())
+            if 'parameters' in state_data:
+                if 'city' in state_data.get('parameters'):
+                    city = state_data.get('parameters').get('city')
+                else:
+                    city = 'Не выбран'
+            else:
+                city = 'Не выбран'
+            if 'parameters' in state_data:
+                if 'age_range' in state_data.get('parameters'):
+                    age_range = state_data.get('parameters').get('age_range')
+                else:
+                    age_range = 'Не выбран'
+            else:
+                age_range = 'Не выбран'
+            if 'parameters' in state_data:
+                if 'sex' in state_data.get('parameters'):
+                    sex = state_data.get('parameters').get('sex')
+                    if sex == 'man':
+                        sex = 'Парням'
+                    elif sex == 'woman':
+                        sex = 'Девушкам'
+                    else:
+                        sex = 'Всем'
+                else:
+                    sex = 'Не выбран'
+            else:
+                sex = 'Не выбран'
+            return await call.message.answer(replica.replica.format(city=city,
+                                                                    age_range=age_range,
+                                                                    sex=sex), protect_content=True,
+                                             reply_markup=create_buttons_parameters_mailing())
     return await call.message.answer(
         text
     )
+
+
+@admin_panel_router.callback_query(F.data == 'choose_city_mailing')
+async def choose_city_for_mailing(call: CallbackQuery, state: FSMContext):
+    await state.set_state(States.city_parameter_for_mailing)
+    replica = await db.get_row(BotReplicas, unique_name='write_city_mailing')
+    await call.message.answer(replica.replica, protect_content=True,
+                              reply_markup=create_close_parameter_button())
+
+
+@admin_panel_router.callback_query(F.data == 'choose_age_range_mailing')
+async def choose_age_range_mailing(call: CallbackQuery, state: FSMContext):
+    await state.set_state(States.age_parameter_for_mailing)
+    replica = await db.get_row(BotReplicas, unique_name='write_age_range_mailing')
+    await call.message.edit_text(replica.replica, protect_content=True,
+                                 reply_markup=create_close_parameter_button())
+
+
+@admin_panel_router.callback_query(F.data == 'choose_sex_mailing')
+async def choose_sex_for_mailing(call: CallbackQuery, state: FSMContext):
+    replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
+    await call.message.answer(replica.replica, protect_content=True,
+                         reply_markup=create_sex_buttons_mailing())
+
+@admin_panel_router.callback_query(F.data == 'start_mailing')
+async def start_mailing(call: CallbackQuery, state: FSMContext):
+    await state.set_state(States.mailing)
+    replica = await db.get_row(BotReplicas, unique_name='write_mailing_message')
+    await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
+    await call.message.answer(replica.replica, protect_content=True)
 
 
 @admin_panel_router.message(States.city_parameter_for_mailing,
@@ -376,17 +435,21 @@ async def write_city_mailing(message: Message):
 
 @admin_panel_router.callback_query(F.data.startswith('mailing_city_'))
 async def location_for_mailing_take_answer(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
     city_code = call.data.split('_')[2]
     city = await db.get_row(Cities, postal_code=int(city_code))
     state_data = await state.get_data()
     if city:
         if await db.get_users_with_city(postal_code=int(city_code)):
+            try:
+                await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+            except:
+                ...
             parameters = state_data.get('parameters', {})
             parameters.update(city=city.address)
             await state.update_data(parameters=parameters)
-            await state.set_state(States.age_parameter_for_mailing)
-            replica = await db.get_row(BotReplicas, unique_name='write_age_range_mailing')
-            await call.message.edit_text(replica.replica, protect_content=True)
+            call = state_data.get('call', CustomCall(call.message))
+            await admin_distrub(call, state)
         else:
             replica = await db.get_row(BotReplicas, unique_name='users_with_city_not_found')
             await call.message.answer(replica.replica, protect_content=True)
@@ -402,25 +465,41 @@ async def take_answer_age_mailing(message: Message, state: FSMContext):
         if match:
             if (int(match.group().split('-')[0]) == int(match.group().split('-')[1]) and
                     16 <= int(match.group().split('-')[0]) < 46 and 16 <= int(match.group().split('-')[1]) < 46):
-                if await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                if not 'parameters' in state_data:
                     parameters = state_data.get('parameters', {})
                     parameters.update(age_range=message.text)
                     await state.update_data(parameters=parameters)
-                    replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
-                    await message.answer(replica.replica, protect_content=True,
-                                         reply_markup=create_sex_buttons_mailing())
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
+                elif not 'city' in state_data.get('parameters'):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
+                elif await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
                 else:
                     replica = await db.get_row(BotReplicas, unique_name='users_with_age_not_found')
                     await message.answer(replica.replica, protect_content=True)
             elif (16 <= int(match.group().split('-')[0]) < 46 and 16 <= int(match.group().split('-')[1]) < 46
                   and int(match.group().split('-')[0]) < int(match.group().split('-')[1])):
-                if await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                if not 'parameters' in state_data:
                     parameters = state_data.get('parameters', {})
                     parameters.update(age_range=message.text)
                     await state.update_data(parameters=parameters)
-                    replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
-                    await message.answer(replica.replica, protect_content=True,
-                                         reply_markup=create_sex_buttons_mailing())
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
+                elif not 'city' in state_data.get('parameters'):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
+                elif await db.get_users_with_age(match.group(), address=state_data.get('parameters')['city']):
+                    parameters = state_data.get('parameters', {})
+                    parameters.update(age_range=message.text)
+                    await state.update_data(parameters=parameters)
+                    await back_to_parameters_mailing_for_func_with_message(message, state)
                 else:
                     replica = await db.get_row(BotReplicas, unique_name='users_with_age_not_found')
                     await message.answer(replica.replica, protect_content=True)
@@ -436,14 +515,21 @@ async def take_answer_age_mailing(message: Message, state: FSMContext):
 async def take_answer_sex_mailing(call: CallbackQuery, state: FSMContext):
     sex = call.data.split('_')[2]
     state_data = await state.get_data()
-    if await db.get_row(Users, to_many=True, sex=sex, address=state_data['parameters']['city']) or sex == 'no':
+    if not 'parameters' in state_data:
         parameters = state_data.get('parameters', {})
         parameters.update(sex=sex)
         await state.update_data(parameters=parameters)
-        await state.set_state(States.mailing)
-        replica = await db.get_row(BotReplicas, unique_name='write_mailing_message')
-        await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
-        await call.message.answer(replica.replica, protect_content=True)
+        await back_to_parameters_mailing(call, state)
+    elif not 'city' in state_data.get('parameters'):
+        parameters = state_data.get('parameters', {})
+        parameters.update(sex=sex)
+        await state.update_data(parameters=parameters)
+        await back_to_parameters_mailing(call, state)
+    elif await db.get_row(Users, to_many=True, sex=sex, address=state_data['parameters']['city']) or sex == 'no':
+        parameters = state_data.get('parameters', {})
+        parameters.update(sex=sex)
+        await state.update_data(parameters=parameters)
+        await back_to_parameters_mailing(call, state)
     else:
         replica = await db.get_row(BotReplicas, unique_name='users_with_sex_not_found')
         await call.message.edit_text(replica.replica, protect_content=True, reply_markup=create_sex_buttons_mailing())
@@ -457,3 +543,31 @@ async def close_wrap_admin_panel(call: CallbackQuery, state: FSMContext):
 @admin_panel_router.callback_query(F.data == 'close_admin_panel')
 async def close_admin_panel(call: CallbackQuery):
         await show_questionnaire(call.message)
+
+
+@admin_panel_router.callback_query(F.data == 'reset_parameters_mailing')
+async def reset_parameters_mailing(call: CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.clear()
+    state_data = await state.get_data()
+    call = state_data.get('call', CustomCall(call.message))
+    await admin_distrub(call, state)
+
+
+@admin_panel_router.callback_query(F.data == 'back_to_parameters_mailing')
+async def back_to_parameters_mailing(call: CallbackQuery, state: FSMContext):
+    temp_storage = user_manager.get_user(call.from_user.id)
+    try:
+        await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
+    except:
+        ...
+    state_data = await state.get_data()
+    call = state_data.get('call', CustomCall(call.message))
+    await admin_distrub(call, state)
+
+@admin_panel_router.message()
+async def back_to_parameters_mailing_for_func_with_message(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id - 1)
+    state_data = await state.get_data()
+    call = state_data.get('call', CustomCall(message))
+    await admin_distrub(call, state)

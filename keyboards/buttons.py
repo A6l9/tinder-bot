@@ -394,3 +394,34 @@ buttons_for_ban_user = (
         callback_data='write_username_again_ban'
     )
 )
+
+
+buttons_parameters_mailing = (
+    InlineKeyboardButton(
+        text='Выбрать город',
+        callback_data='choose_city_mailing'
+    ),
+    InlineKeyboardButton(
+        text='Выбрать диапазон возраста',
+        callback_data='choose_age_range_mailing'
+    ),
+    InlineKeyboardButton(
+        text='Выбрать пол',
+        callback_data='choose_sex_mailing'
+    ),
+    InlineKeyboardButton(
+        text='Сбросить параметры',
+        callback_data='reset_parameters_mailing'
+    ),
+    InlineKeyboardButton(
+        text='Начать рассылку',
+        callback_data='start_mailing'
+    )
+)
+
+close_parameter_mailing = (
+    InlineKeyboardButton(
+        text='Отмена❌',
+        callback_data='back_to_parameters_mailing'
+    ),
+)

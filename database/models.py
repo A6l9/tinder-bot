@@ -15,7 +15,7 @@ class Users(Base):
     username: Mapped[str] = mapped_column(String, nullable=True)
     tg_username: Mapped[str] = mapped_column(String)
     about_yourself: Mapped[str] = mapped_column(String, nullable=True)
-    age: Mapped[str] = mapped_column(String, nullable=True)
+    age: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     preference: Mapped[str] = mapped_column(String, nullable=True)
     range_age: Mapped[str] = mapped_column(String, nullable=True, default='16-45')

@@ -1,7 +1,7 @@
 from typing import Iterable, List
 
 from loguru import logger
-from sqlalchemy import Select, update, select, between
+from sqlalchemy import Select, update, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.ddl import DropTable
@@ -258,8 +258,8 @@ class BaseInterface:
             return res
 
     async def get_users_with_age(self, age_range: str, address: str):
-        start_age = str(age_range.split('-')[0])
-        end_age = str(age_range.split('-')[1])
+        start_age = int(age_range.split('-')[0])
+        end_age = int(age_range.split('-')[1])
         async with self.async_ses() as session:
             query = select(Users).where(Users.done_questionnaire == True,
                                         Users.age.between(start_age, end_age), Users.address == address)
@@ -270,16 +270,37 @@ class BaseInterface:
 
     async def get_users_for_mailing(self, parameters):
         async with self.async_ses() as session:
-            start_age = int(parameters['age_range'].split('-')[0]) - 1
-            end_age = int(parameters['age_range'].split('-')[1]) + 1
+            if not parameters:
+                parameters = {}
+            if 'age_range' in parameters:
+                start_age = parameters['age_range'].split('-')[0]
+                end_age = parameters['age_range'].split('-')[1]
+            else:
+                start_age = '16'
+                end_age = '45'
             sex_list = ['man', 'woman']
-            if parameters['sex'] in sex_list:
+            if  not 'sex' in parameters and not 'city' in parameters:
                 query = select(Users).where(Users.done_questionnaire == True,
-                                Users.address == parameters['city'], Users.age.between(str(start_age), str(end_age)),
+                                            Users.age.between(int(start_age), int(end_age)))
+            elif not 'sex' in parameters:
+                query = select(Users).where(Users.done_questionnaire == True,
+                                            Users.address == parameters['city'],
+                                            Users.age.between(int(start_age), int(end_age)))
+            elif not 'city' in parameters:
+                if parameters['sex'] in sex_list:
+                    query = select(Users).where(Users.done_questionnaire == True,
+                                            Users.age.between(int(start_age), int(end_age)),
+                                                              Users.sex == parameters['sex'])
+                else:
+                    query = select(Users).where(Users.done_questionnaire == True,
+                                                Users.age.between(int(start_age), int(end_age)))
+            elif parameters['sex'] in sex_list:
+                query = select(Users).where(Users.done_questionnaire == True,
+                                Users.address == parameters['city'], Users.age.between(int(start_age), int(end_age)),
                                 Users.sex == parameters['sex'])
             else:
                 query = select(Users).where(Users.done_questionnaire == True,
-                                Users.address == parameters['city'], Users.age.between(str(start_age), str(end_age)),
+                                Users.address == parameters['city'], Users.age.between(int(start_age), int(end_age)),
                                 Users.sex.in_(sex_list))
             result = await session.execute(query)
             users = result.scalars().all()

@@ -10,7 +10,7 @@ from keyboards.buttons import start_button, sex_buttons, \
     pagination_questionnaire_buttons_start, pagination_questionnaire_buttons_middle, \
     pagination_questionnaire_buttons_end, pagination_questionnaire_match_buttons, go_to_somewhere, \
     admin_panel, admin_panel_buttons, close_admin_panel, sex_mailing_button, buttons_for_delete_user, \
-    buttons_for_ban_user
+    buttons_for_ban_user, buttons_parameters_mailing, close_parameter_mailing
 from loader import db
 from database.models import Users
 import json
@@ -255,3 +255,17 @@ def create_buttons_for_ban_profile():
     builder.row(*buttons_for_ban_user)
     builder.adjust(1)
     return builder.as_markup()
+
+def create_buttons_parameters_mailing():
+    builder = InlineKeyboardBuilder()
+    builder.row(*buttons_parameters_mailing, *close_admin_panel)
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_close_parameter_button():
+    inline_kb_list = [
+        [
+            *close_parameter_mailing
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
