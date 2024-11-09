@@ -5,6 +5,7 @@ import re
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 
 from database.models import BotReplicas, Users, Matches, Cities
 from loader import db, bot, user_manager
@@ -34,7 +35,7 @@ async def admin_panel(call: CallbackQuery, state: FSMContext):
             temp_storage = user_manager.get_user(call.from_user.id)
             try:
                 await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-            except:
+            except TelegramBadRequest:
                 ...
             replica = await db.get_row(BotReplicas, unique_name='admin_panel_message')
             await call.message.answer(replica.replica, protect_content=True, reply_markup=create_admin_panel_buttons())
@@ -146,7 +147,7 @@ async def get_user_if_for_delete(message: Message, state: FSMContext):
             try:
                 await asyncio.sleep(1)
                 await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-            except:
+            except TelegramBadRequest:
                 ...
 
 
@@ -234,12 +235,12 @@ async def get_user_if_for_ban(message: Message, state: FSMContext):
             try:
                 await asyncio.sleep(1)
                 await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-            except:
+            except TelegramBadRequest:
                 ...
         try:
             await asyncio.sleep(1)
             await clear_back(bot=bot, message=message, anchor_message=temp_storage.start_message)
-        except:
+        except TelegramBadRequest:
             ...
 
 
@@ -255,7 +256,7 @@ async def yes_ban_user_profile(call: CallbackQuery, state: FSMContext):
     await admin_panel(call, state)
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
+    except TelegramBadRequest:
         ...
 
 
@@ -271,7 +272,7 @@ async def yes_delete_user_profile(call: CallbackQuery, state: FSMContext):
     await admin_panel(call, state)
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
+    except TelegramBadRequest:
         ...
     await state.clear()
 
@@ -299,7 +300,7 @@ async def new_post_handler(message: Message, state: FSMContext):
     try:
         text = message.html_text
         msg_data.update(text=text)
-    except:
+    except TelegramBadRequest:
         text = None
     photos = None
     if message.content_type == 'photo':
@@ -328,11 +329,11 @@ async def new_post_handler(message: Message, state: FSMContext):
     call = state_data.get('call', CustomCall(message))
     await state.update_data(notif=[], msg_data=msg_data)
     call.data = f'view_{state_data.get("current_key")}'
-    return await admin_distrub(call, state)
+    return await admin_mailing(call, state)
 
 
 @admin_panel_router.callback_query(F.data == 'mailing')
-async def admin_distrub(call: CustomCall, state: FSMContext):
+async def admin_mailing(call: CustomCall, state: FSMContext):
     state_data = await state.get_data()
     if Disturb.is_running:
         text = (
@@ -406,7 +407,7 @@ async def choose_age_range_mailing(call: CallbackQuery, state: FSMContext):
 
 
 @admin_panel_router.callback_query(F.data == 'choose_sex_mailing')
-async def choose_sex_for_mailing(call: CallbackQuery, state: FSMContext):
+async def choose_sex_for_mailing(call: CallbackQuery):
     replica = await db.get_row(BotReplicas, unique_name='choose_sex_mailing')
     await call.message.answer(replica.replica, protect_content=True,
                          reply_markup=create_sex_buttons_mailing())
@@ -443,13 +444,13 @@ async def location_for_mailing_take_answer(call: CallbackQuery, state: FSMContex
         if await db.get_users_with_city(postal_code=int(city_code)):
             try:
                 await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-            except:
+            except TelegramBadRequest:
                 ...
             parameters = state_data.get('parameters', {})
             parameters.update(city=city.address)
             await state.update_data(parameters=parameters)
             call = state_data.get('call', CustomCall(call.message))
-            await admin_distrub(call, state)
+            await admin_mailing(call, state)
         else:
             replica = await db.get_row(BotReplicas, unique_name='users_with_city_not_found')
             await call.message.answer(replica.replica, protect_content=True)
@@ -551,7 +552,7 @@ async def reset_parameters_mailing(call: CallbackQuery, state: FSMContext):
     await state.clear()
     state_data = await state.get_data()
     call = state_data.get('call', CustomCall(call.message))
-    await admin_distrub(call, state)
+    await admin_mailing(call, state)
 
 
 @admin_panel_router.callback_query(F.data == 'back_to_parameters_mailing')
@@ -559,15 +560,18 @@ async def back_to_parameters_mailing(call: CallbackQuery, state: FSMContext):
     temp_storage = user_manager.get_user(call.from_user.id)
     try:
         await clear_back(bot=bot, message=call.message, anchor_message=temp_storage.start_message)
-    except:
+    except TelegramBadRequest:
         ...
     state_data = await state.get_data()
     call = state_data.get('call', CustomCall(call.message))
-    await admin_distrub(call, state)
+    await admin_mailing(call, state)
 
 @admin_panel_router.message()
 async def back_to_parameters_mailing_for_func_with_message(message: Message, state: FSMContext):
-    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id - 1)
+    try:
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id - 1)
+    except TelegramBadRequest:
+        ...
     state_data = await state.get_data()
     call = state_data.get('call', CustomCall(message))
-    await admin_distrub(call, state)
+    await admin_mailing(call, state)
